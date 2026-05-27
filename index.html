@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <meta name="theme-color" content="#1D9E75"/>
+  <meta name="description" content="Track your daily habits with streaks and time logging"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Habits"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon.svg"/>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"/>
+  <title>Habit Tracker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/tabler-icons.min.css"/>
+  <style>
+    :root {
+      --color-text-primary: #111827;
+      --color-text-secondary: #6B7280;
+      --color-text-tertiary: #9CA3AF;
+      --color-background-primary: #FFFFFF;
+      --color-background-secondary: #F9FAFB;
+      --color-border-primary: #9CA3AF;
+      --color-border-secondary: #E5E7EB;
+      --color-border-tertiary: #F3F4F6;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #F9FAFB;
+        --color-text-secondary: #9CA3AF;
+        --color-text-tertiary: #6B7280;
+        --color-background-primary: #1F2937;
+        --color-background-secondary: #111827;
+        --color-border-primary: #6B7280;
+        --color-border-secondary: #374151;
+        --color-border-tertiary: #273344;
+      }
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      min-height:100%;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+      background:var(--color-background-secondary);
+      color:var(--color-text-primary);
+      -webkit-font-smoothing:antialiased;
+    }
+    .container{max-width:720px;margin:0 auto;padding:0 1rem}
+
+    .wrap{padding:1.5rem 0}
+    .title{font-size:18px;font-weight:600;color:var(--color-text-primary)}
+    .subtitle{font-size:13px;color:var(--color-text-secondary);margin-top:2px;margin-bottom:1.5rem}
+    .add-row{display:flex;gap:8px;margin-bottom:1.5rem}
+    .add-row input{flex:1;height:36px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px}
+    .add-row input:focus{outline:none;box-shadow:0 0 0 2px #378ADD44}
+    .add-row button{height:36px;padding:0 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .add-row button:hover{background:var(--color-background-secondary)}
+    .habit-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px}
+    .habit-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+    .expand-btn{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:16px;padding:2px;line-height:1;transition:transform .2s}
+    .expand-btn.open{transform:rotate(90deg)}
+    .habit-name{font-size:15px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .time-badge{font-size:12px;color:var(--color-text-secondary);white-space:nowrap;margin-right:2px}
+    .streak{font-size:12px;color:var(--color-text-secondary);background:var(--color-background-secondary);border-radius:99px;padding:3px 10px;white-space:nowrap}
+    .streak.hot{background:#FAEEDA;color:#633806}
+    @media(prefers-color-scheme:dark){.streak.hot{background:#4A2800;color:#FBBF24}}
+    .icon-btn{background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);font-size:16px;padding:4px;line-height:1;border-radius:4px}
+    .icon-btn:hover{color:var(--color-text-primary)}
+    .del-btn:hover{color:#E24B4A}
+
+    /* Dots row — horizontal scroll on small screens */
+    .dots{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+    .dots::-webkit-scrollbar{height:3px}
+    .dots::-webkit-scrollbar-track{background:transparent}
+    .dots::-webkit-scrollbar-thumb{background:var(--color-border-secondary);border-radius:2px}
+
+    .dot-col{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0}
+    .day-label{font-size:10px;color:var(--color-text-tertiary);text-align:center}
+    .date-num{font-size:9px;color:var(--color-text-tertiary);text-align:center;margin-bottom:2px}
+    .dot{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-text-tertiary);transition:background .15s;position:relative}
+    .dot.done{background:#1D9E75;border-color:#0F6E56}
+    .dot.done i{color:#fff}
+    .dot.parent-done{background:#9FE1CB;border-color:#5DCAA5;cursor:default}
+    .dot:hover:not(.parent-done){border-color:var(--color-border-primary)}
+    .sub-dot{width:22px;height:22px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+    .sub-dot.done{background:#1D9E75;border-color:#0F6E56}
+    .sub-dot.done i{color:#fff;font-size:9px}
+    .sub-dot:hover{border-color:var(--color-border-primary)}
+    .sub-section{margin-top:12px;border-top:0.5px solid var(--color-border-tertiary);padding-top:12px}
+    .sub-habit-row{margin-bottom:10px}
+    .sub-habit-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .sub-name{font-size:13px;font-weight:500;color:var(--color-text-secondary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sub-time{font-size:11px;color:var(--color-text-tertiary);white-space:nowrap;margin-right:2px}
+    .sub-streak{font-size:11px;color:var(--color-text-tertiary);background:var(--color-background-secondary);border-radius:99px;padding:2px 8px;white-space:nowrap}
+    .sub-streak.hot{background:#FAEEDA;color:#633806}
+    @media(prefers-color-scheme:dark){.sub-streak.hot{background:#4A2800;color:#FBBF24}}
+    .sub-day-label{font-size:9px;color:var(--color-text-tertiary);text-align:center}
+    .sub-date-num{font-size:8px;color:var(--color-text-tertiary);text-align:center;margin-bottom:2px}
+    .sub-add-row{display:flex;gap:6px;margin-top:10px}
+    .sub-add-row input{flex:1;height:30px;padding:0 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px}
+    .sub-add-row input:focus{outline:none;box-shadow:0 0 0 2px #378ADD44}
+    .sub-add-row button{height:30px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px}
+    .sub-add-row button:hover{background:var(--color-background-primary)}
+    .empty{text-align:center;padding:2rem;color:var(--color-text-tertiary);font-size:14px}
+    .month-label{font-size:13px;font-weight:500;color:var(--color-text-secondary);margin-bottom:.75rem}
+
+    /* Popup */
+    .popup-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);padding:1rem}
+    .popup{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;width:100%;max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+    .popup-title{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+    .popup-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:12px}
+    .quick-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .quick-btn{height:30px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;cursor:pointer}
+    .quick-btn:hover{background:var(--color-background-primary);border-color:var(--color-border-primary)}
+    .custom-row{display:flex;gap:6px;margin-bottom:12px;align-items:center}
+    .custom-row input{flex:1;height:30px;padding:0 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px}
+    .custom-row input:focus{outline:none;box-shadow:0 0 0 2px #378ADD44}
+    .custom-row span{font-size:12px;color:var(--color-text-secondary)}
+    .popup-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .popup-btn{flex:1;height:32px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;cursor:pointer;white-space:nowrap}
+    .popup-btn:hover{background:var(--color-background-primary)}
+    .popup-btn.danger{color:#E24B4A;border-color:#F09595}
+    .popup-btn.danger:hover{background:#FCEBEB}
+    .popup-btn.primary{background:#1D9E75;border-color:#0F6E56;color:#fff}
+    .popup-btn.primary:hover{background:#0F6E56}
+    .popup-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:10px 0}
+
+    /* Install banner */
+    #install-bar{display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--color-text-secondary)}
+    #install-bar.visible{display:flex}
+    #install-bar button{height:28px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid #0F6E56;background:#1D9E75;color:#fff;font-size:12px;cursor:pointer;white-space:nowrap}
+    #install-dismiss{background:none;border:none;color:var(--color-text-tertiary);cursor:pointer;font-size:18px;line-height:1;padding:2px}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="wrap">
+    <div class="title">Habit Tracker</div>
+    <div class="subtitle" id="date-label"></div>
+
+    <div id="install-bar">
+      <span>Add to Home Screen for offline access</span>
+      <button id="install-btn">Install</button>
+      <button id="install-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+
+    <div class="add-row">
+      <input type="text" id="new-habit" placeholder="Add a main habit…" maxlength="60"/>
+      <button onclick="addHabit()"><i class="ti ti-plus" aria-hidden="true"></i> Add habit</button>
+    </div>
+    <div id="habits-list"></div>
+  </div>
+</div>
+<div id="popup-root"></div>
+
+<script>
+const TODAY = new Date();
+const DAYS = 21;
+let habits = [], checks = {}, times = {}, expanded = {};
+
+function ymd(d) { return d.toISOString().slice(0, 10); }
+function todayKey() { return ymd(TODAY); }
+function getPast(n) {
+  const a = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(TODAY);
+    d.setDate(TODAY.getDate() - i);
+    a.push(d);
+  }
+  return a;
+}
+function dayLabel(d) { return ['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]; }
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return esc(s).replace(/'/g,'&#39;'); }
+
+function fmtTime(mins) {
+  if (!mins || mins <= 0) return '';
+  if (mins < 60) return mins + 'm';
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? h + 'h ' + m + 'm' : h + 'h';
+}
+
+function load() {
+  try { habits = JSON.parse(localStorage.getItem('ht3_habits') || '[]'); } catch(e) { habits = []; }
+  try { checks = JSON.parse(localStorage.getItem('ht3_checks') || '{}'); } catch(e) { checks = {}; }
+  try { times  = JSON.parse(localStorage.getItem('ht3_times')  || '{}'); } catch(e) { times  = {}; }
+  render();
+}
+
+function save() {
+  localStorage.setItem('ht3_habits', JSON.stringify(habits));
+  localStorage.setItem('ht3_checks', JSON.stringify(checks));
+  localStorage.setItem('ht3_times',  JSON.stringify(times));
+}
+
+function addHabit() {
+  const inp = document.getElementById('new-habit');
+  const name = inp.value.trim();
+  if (!name) return;
+  const id = 'h' + Date.now();
+  habits.push({ id, name, subs: [] });
+  expanded[id] = true;
+  inp.value = '';
+  save(); render();
+}
+
+function deleteHabit(id) {
+  habits = habits.filter(h => h.id !== id);
+  save(); render();
+}
+
+function addSub(hid) {
+  const inp = document.getElementById('sub-inp-' + hid);
+  const name = inp.value.trim();
+  if (!name) return;
+  const h = habits.find(x => x.id === hid);
+  if (!h) return;
+  h.subs.push({ id: 's' + Date.now(), name });
+  inp.value = '';
+  save(); render();
+}
+
+function deleteSub(hid, sid) {
+  const h = habits.find(x => x.id === hid);
+  if (!h) return;
+  h.subs = h.subs.filter(s => s.id !== sid);
+  save(); render();
+}
+
+function toggleExpand(id) { expanded[id] = !expanded[id]; render(); }
+
+function getTotalMins(id, dateFilter) {
+  let total = 0;
+  Object.keys(times).forEach(k => {
+    if (k.startsWith(id + '|')) {
+      if (!dateFilter || k === id + '|' + dateFilter) total += times[k] || 0;
+    }
+  });
+  return total;
+}
+
+function getParentTotalMins(h) {
+  if (h.subs.length === 0) return getTotalMins(h.id);
+  return h.subs.reduce((sum, s) => sum + getTotalMins(s.id), 0);
+}
+
+function parentCheckedOn(h, ds) {
+  if (h.subs.length === 0) return !!checks[h.id + '|' + ds];
+  return h.subs.some(s => checks[s.id + '|' + ds]);
+}
+
+function getStreak(id) {
+  let s = 0;
+  const d = new Date(TODAY);
+  while (true) {
+    const k = id + '|' + ymd(d);
+    if (checks[k]) { s++; d.setDate(d.getDate() - 1); } else break;
+  }
+  return s;
+}
+
+function getParentStreak(h) {
+  let s = 0;
+  const d = new Date(TODAY);
+  while (true) {
+    if (parentCheckedOn(h, ymd(d))) { s++; d.setDate(d.getDate() - 1); } else break;
+  }
+  return s;
+}
+
+// --- Popup ---
+let popupState = null;
+
+function openPopup(id, dateStr, isSub, habitName) {
+  const isDone = !!checks[id + '|' + dateStr];
+  const currentMins = times[id + '|' + dateStr] || 0;
+  popupState = { id, dateStr, isSub, habitName, isDone, currentMins };
+  renderPopup();
+}
+
+function closePopup() {
+  popupState = null;
+  document.getElementById('popup-root').innerHTML = '';
+}
+
+function applyTime(mins) {
+  if (!popupState) return;
+  const k = popupState.id + '|' + popupState.dateStr;
+  checks[k] = 1;
+  times[k] = (times[k] || 0) + mins;
+  save(); closePopup(); render();
+}
+
+function subtractTime(mins) {
+  if (!popupState) return;
+  const k = popupState.id + '|' + popupState.dateStr;
+  times[k] = Math.max(0, (times[k] || 0) - mins);
+  if (times[k] === 0) delete times[k];
+  save(); closePopup(); render();
+}
+
+function removeCheck() {
+  if (!popupState) return;
+  const k = popupState.id + '|' + popupState.dateStr;
+  delete checks[k];
+  delete times[k];
+  save(); closePopup(); render();
+}
+
+function applyCustom(mode) {
+  const val = parseInt(document.getElementById('custom-mins').value) || 0;
+  if (val <= 0) return;
+  if (mode === 'add') applyTime(val); else subtractTime(val);
+}
+
+function renderPopup() {
+  if (!popupState) { document.getElementById('popup-root').innerHTML = ''; return; }
+  const { isDone, currentMins, habitName, dateStr } = popupState;
+  const dispDate = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const isToday = dateStr === todayKey();
+  const dateDisp = isToday ? 'Today' : dispDate;
+
+  let inner = '';
+  if (!isDone) {
+    inner = `
+      <div class="popup-title">How long?</div>
+      <div class="popup-sub">${esc(habitName)} &middot; ${dateDisp}</div>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="applyTime(15)">15m</button>
+        <button class="quick-btn" onclick="applyTime(30)">30m</button>
+        <button class="quick-btn" onclick="applyTime(60)">1h</button>
+        <button class="quick-btn" onclick="applyTime(90)">1.5h</button>
+        <button class="quick-btn" onclick="applyTime(120)">2h</button>
+      </div>
+      <div class="custom-row">
+        <input type="number" id="custom-mins" min="1" max="999" placeholder="Custom" style="width:80px"/>
+        <span>min</span>
+        <button class="popup-btn primary" onclick="applyCustom('add')" style="flex:0;padding:0 12px">Log</button>
+      </div>
+      <hr class="popup-divider"/>
+      <div class="popup-actions">
+        <button class="popup-btn" onclick="closePopup()">Cancel</button>
+      </div>`;
+  } else {
+    inner = `
+      <div class="popup-title">Update time</div>
+      <div class="popup-sub">${esc(habitName)} &middot; ${dateDisp} &middot; <strong>${fmtTime(currentMins) || 'no time logged'}</strong></div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Add time</div>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="applyTime(15)">+15m</button>
+        <button class="quick-btn" onclick="applyTime(30)">+30m</button>
+        <button class="quick-btn" onclick="applyTime(60)">+1h</button>
+        <button class="quick-btn" onclick="applyTime(120)">+2h</button>
+      </div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px;margin-top:4px">Subtract time</div>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="subtractTime(15)">&minus;15m</button>
+        <button class="quick-btn" onclick="subtractTime(30)">&minus;30m</button>
+        <button class="quick-btn" onclick="subtractTime(60)">&minus;1h</button>
+      </div>
+      <div class="custom-row">
+        <input type="number" id="custom-mins" min="1" max="999" placeholder="Custom" style="width:80px"/>
+        <span>min</span>
+        <button class="popup-btn primary" onclick="applyCustom('add')" style="flex:0;padding:0 12px">+</button>
+        <button class="popup-btn" onclick="applyCustom('sub')" style="flex:0;padding:0 12px">&minus;</button>
+      </div>
+      <hr class="popup-divider"/>
+      <div class="popup-actions">
+        <button class="popup-btn danger" onclick="removeCheck()"><i class="ti ti-trash" aria-hidden="true"></i> Remove</button>
+        <button class="popup-btn" onclick="closePopup()">Cancel</button>
+      </div>`;
+  }
+
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">${inner}</div>
+    </div>`;
+}
+
+function render() {
+  const days = getPast(DAYS);
+  document.getElementById('date-label').textContent = TODAY.toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  });
+  const list = document.getElementById('habits-list');
+  if (!habits.length) {
+    list.innerHTML = '<div class="empty"><i class="ti ti-checkbox" style="font-size:32px;display:block;margin:0 auto 8px" aria-hidden="true"></i>No habits yet — add one above</div>';
+    return;
+  }
+  let html = '<div class="month-label">Last ' + DAYS + ' days</div>';
+  habits.forEach(h => {
+    const pStreak = getParentStreak(h);
+    const hot = pStreak >= 3;
+    const isOpen = !!expanded[h.id];
+    const pTime = getParentTotalMins(h);
+    const pTimeStr = pTime > 0 ? ' <span class="time-badge">(' + fmtTime(pTime) + ')</span>' : '';
+
+    html += `<div class="habit-card">
+      <div class="habit-top">
+        <button class="expand-btn icon-btn ${isOpen ? 'open' : ''}" onclick="toggleExpand('${h.id}')" aria-label="Expand">
+          <i class="ti ti-chevron-right" aria-hidden="true"></i>
+        </button>
+        <span class="habit-name">${esc(h.name)}${pTimeStr}</span>
+        <span class="streak ${hot ? 'hot' : ''}">${pStreak > 0 ? (hot ? '🔥 ' : '') + pStreak + ' day streak' : 'no streak'}</span>
+        <button class="icon-btn del-btn" onclick="deleteHabit('${h.id}')" aria-label="Delete habit">
+          <i class="ti ti-trash" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div class="dots">`;
+
+    days.forEach(d => {
+      const ds = ymd(d);
+      const isToday = ds === todayKey();
+      const todayStyle = isToday ? 'border-color:var(--color-border-primary);' : '';
+      if (h.subs.length === 0) {
+        const k = h.id + '|' + ds;
+        const done = !!checks[k];
+        const t = times[k] || 0;
+        html += `<div class="dot-col">
+          <div class="day-label">${dayLabel(d)}</div>
+          <div class="date-num">${d.getDate()}</div>
+          <div class="dot ${done ? 'done' : ''}" onclick="openPopup('${h.id}','${ds}',false,'${escAttr(h.name)}')" style="${todayStyle}" title="${ds}">
+            ${done ? (t > 0 ? '<span style="font-size:8px;color:#fff;font-weight:500">' + fmtTime(t) + '</span>' : '<i class="ti ti-check" aria-hidden="true"></i>') : ''}
+          </div></div>`;
+      } else {
+        const anyDone = parentCheckedOn(h, ds);
+        html += `<div class="dot-col">
+          <div class="day-label">${dayLabel(d)}</div>
+          <div class="date-num">${d.getDate()}</div>
+          <div class="dot ${anyDone ? 'parent-done' : ''}" style="cursor:default;${todayStyle}">
+            ${anyDone ? '<i class="ti ti-check" style="color:#0F6E56" aria-hidden="true"></i>' : ''}
+          </div></div>`;
+      }
+    });
+    html += `</div>`;
+
+    if (isOpen) {
+      html += `<div class="sub-section">`;
+      if (!h.subs.length) html += `<div style="font-size:13px;color:var(--color-text-tertiary);margin-bottom:10px">No sub-habits yet — add one below</div>`;
+      h.subs.forEach(s => {
+        const sStreak = getStreak(s.id);
+        const shot = sStreak >= 3;
+        const sTime = getTotalMins(s.id);
+        const sTimeStr = sTime > 0 ? ' <span class="sub-time">(' + fmtTime(sTime) + ')</span>' : '';
+        html += `<div class="sub-habit-row">
+          <div class="sub-habit-top">
+            <i class="ti ti-corner-down-right" style="font-size:14px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
+            <span class="sub-name">${esc(s.name)}${sTimeStr}</span>
+            <span class="sub-streak ${shot ? 'hot' : ''}">${sStreak > 0 ? (shot ? '🔥 ' : '') + sStreak + 'd' : '–'}</span>
+            <button class="icon-btn del-btn" onclick="deleteSub('${h.id}','${s.id}')" aria-label="Delete sub-habit" style="font-size:14px">
+              <i class="ti ti-x" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="dots">`;
+        days.forEach(d => {
+          const ds = ymd(d);
+          const k = s.id + '|' + ds;
+          const done = !!checks[k];
+          const t = times[k] || 0;
+          const isToday = ds === todayKey();
+          html += `<div class="dot-col">
+            <div class="sub-day-label">${dayLabel(d)}</div>
+            <div class="sub-date-num">${d.getDate()}</div>
+            <div class="sub-dot ${done ? 'done' : ''}" onclick="openPopup('${s.id}','${ds}',true,'${escAttr(s.name)}')" style="${isToday ? 'border-color:var(--color-border-primary);' : ''}" title="${ds}">
+              ${done ? (t > 0 ? '<span style="font-size:7px;color:#fff;font-weight:500">' + fmtTime(t) + '</span>' : '<i class="ti ti-check" aria-hidden="true"></i>') : ''}
+            </div></div>`;
+        });
+        html += `</div></div>`;
+      });
+      html += `<div class="sub-add-row">
+        <input type="text" id="sub-inp-${h.id}" placeholder="Add sub-habit…" maxlength="60" onkeydown="if(event.key==='Enter')addSub('${h.id}')"/>
+        <button onclick="addSub('${h.id}')"><i class="ti ti-plus" aria-hidden="true"></i> Add</button>
+      </div></div>`;
+    }
+    html += `</div>`;
+  });
+  list.innerHTML = html;
+}
+
+document.getElementById('new-habit').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
+load();
+
+// PWA install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-bar').classList.add('visible');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-bar').classList.remove('visible');
+});
+document.getElementById('install-dismiss').addEventListener('click', () => {
+  document.getElementById('install-bar').classList.remove('visible');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-bar').classList.remove('visible');
+});
+
+// Service worker registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
