@@ -13,6 +13,8 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml"/>
   <title>Habit Tracker</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/tabler-icons.min.css"/>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --color-text-primary: #111827;
@@ -137,7 +139,12 @@
 <body>
 <div class="container">
   <div class="wrap">
-    <div class="title">Habit Tracker</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+      <div class="title">Habit Tracker</div>
+      <button id="sync-btn" class="icon-btn" onclick="openSyncPopup()" aria-label="Sync settings" title="Sync" style="font-size:18px;color:var(--color-text-tertiary)">
+        <i class="ti ti-cloud" aria-hidden="true"></i>
+      </button>
+    </div>
     <div class="subtitle" id="date-label"></div>
 
     <div id="install-bar">
@@ -154,8 +161,35 @@
   </div>
 </div>
 <div id="popup-root"></div>
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)"/>
 
 <script>
+// ─── Firebase Sync ────────────────────────────────────────────────────────────
+// Setup steps:
+//   1. Create a free project at https://console.firebase.google.com
+//   2. Enable Firestore (Native mode) with these security rules:
+//        match /habits/{k} { allow read, write: if k.matches('[0-9a-f]{32}'); }
+//   3. Register a Web app in Project settings and paste the config below.
+const FIREBASE_CONFIG = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_PROJECT.firebaseapp.com',
+  projectId: 'YOUR_PROJECT',
+  storageBucket: 'YOUR_PROJECT.appspot.com',
+  messagingSenderId: 'YOUR_SENDER_ID',
+  appId: 'YOUR_APP_ID'
+};
+const SYNC_READY = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
+let db = null;
+if (SYNC_READY) {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+}
+let syncKey = null, syncUnsub = null;
+let localUpdatedAt = parseInt(localStorage.getItem('ht3_updatedAt') || '0', 10);
+let syncStatus = 'offline';
+// ─────────────────────────────────────────────────────────────────────────────
+
 const TODAY = new Date();
 const DAYS = 21;
 let habits = [], checks = {}, times = {}, expanded = {};
@@ -195,6 +229,13 @@ function save() {
   localStorage.setItem('ht3_habits', JSON.stringify(habits));
   localStorage.setItem('ht3_checks', JSON.stringify(checks));
   localStorage.setItem('ht3_times',  JSON.stringify(times));
+  if (db && syncKey) {
+    setSyncStatus('syncing');
+    db.collection('habits').doc(syncKey).set({
+      habits, checks, times,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => setSyncStatus('synced')).catch(() => setSyncStatus('error'));
+  }
 }
 
 function addHabit() {
@@ -483,6 +524,174 @@ function render() {
 
 document.getElementById('new-habit').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
 load();
+attachSync();
+
+// ─── Sync functions ───────────────────────────────────────────────────────────
+function setSyncStatus(s) {
+  syncStatus = s;
+  const btn = document.getElementById('sync-btn');
+  if (!btn) return;
+  const color = { synced: '#1D9E75', syncing: '#F59E0B', offline: '#9CA3AF', error: '#E24B4A' }[s] || '#9CA3AF';
+  btn.style.color = color;
+  btn.title = { synced: 'Synced', syncing: 'Syncing…', offline: 'Offline', error: 'Sync error' }[s] || 'Sync';
+}
+
+function getSyncKey() {
+  let key = localStorage.getItem('ht3_syncKey');
+  if (!key) {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    key = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem('ht3_syncKey', key);
+  }
+  return key;
+}
+
+function attachSync() {
+  if (!SYNC_READY || !db) { setSyncStatus('offline'); return; }
+  syncKey = getSyncKey();
+  setSyncStatus('syncing');
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  syncUnsub = db.collection('habits').doc(syncKey)
+    .onSnapshot({ includeMetadataChanges: true }, doc => {
+      if (doc.metadata.hasPendingWrites) return;
+      setSyncStatus('synced');
+      if (!doc.exists) return;
+      const data = doc.data();
+      const cloudTs = data.updatedAt ? data.updatedAt.toMillis() : 0;
+      if (cloudTs > localUpdatedAt) {
+        habits = data.habits || [];
+        checks = data.checks || {};
+        times = data.times || {};
+        localUpdatedAt = cloudTs;
+        localStorage.setItem('ht3_habits', JSON.stringify(habits));
+        localStorage.setItem('ht3_checks', JSON.stringify(checks));
+        localStorage.setItem('ht3_times', JSON.stringify(times));
+        localStorage.setItem('ht3_updatedAt', String(cloudTs));
+        render();
+      }
+    }, () => setSyncStatus('error'));
+}
+
+function openSyncPopup() {
+  if (!SYNC_READY) {
+    document.getElementById('popup-root').innerHTML = `
+      <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+        <div class="popup">
+          <div class="popup-title">Sync not configured</div>
+          <div class="popup-sub" style="margin-bottom:16px">Add your Firebase project config to <code>index.html</code> to enable cross-device sync (see comments near top of the script block).</div>
+          <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Manual backup</div>
+          <div class="popup-actions" style="margin-bottom:0">
+            <button class="popup-btn" onclick="exportJSON()"><i class="ti ti-download" aria-hidden="true"></i> Export JSON</button>
+            <button class="popup-btn" onclick="importJSON()"><i class="ti ti-upload" aria-hidden="true"></i> Import JSON</button>
+          </div>
+          <hr class="popup-divider"/>
+          <div class="popup-actions"><button class="popup-btn primary" onclick="closePopup()">Close</button></div>
+        </div>
+      </div>`;
+    return;
+  }
+  const key = syncKey || getSyncKey();
+  const masked = key.slice(0, 8) + '…' + key.slice(-4);
+  const statusLabel = { synced: 'Synced ✓', syncing: 'Syncing…', offline: 'Offline', error: 'Error' }[syncStatus] || '';
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Sync settings</div>
+        <div class="popup-sub">${statusLabel}</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Your sync key</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+          <code style="flex:1;font-size:11px;background:var(--color-background-secondary);padding:6px 8px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${masked}</code>
+          <button class="popup-btn" style="flex:0;padding:0 12px" onclick="copySyncKey()">Copy</button>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Link another device</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <input id="sync-key-input" type="text" maxlength="32" placeholder="Paste 32-char key…"
+            style="flex:1;height:30px;padding:0 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:12px;font-family:monospace"/>
+          <button class="popup-btn primary" style="flex:0;padding:0 12px" onclick="applySyncKey()">Use</button>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:6px">Manual backup</div>
+        <div class="popup-actions" style="margin-bottom:12px">
+          <button class="popup-btn" onclick="exportJSON()"><i class="ti ti-download" aria-hidden="true"></i> Export JSON</button>
+          <button class="popup-btn" onclick="importJSON()"><i class="ti ti-upload" aria-hidden="true"></i> Import JSON</button>
+        </div>
+        <hr class="popup-divider"/>
+        <div class="popup-actions">
+          <button class="popup-btn danger" onclick="resetSyncKey()">Reset key</button>
+          <button class="popup-btn" onclick="closePopup()">Close</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function copySyncKey() {
+  const key = syncKey || getSyncKey();
+  navigator.clipboard.writeText(key).then(() => {
+    const inp = document.getElementById('sync-key-input');
+    if (inp) { inp.placeholder = 'Copied to clipboard!'; setTimeout(() => { inp.placeholder = 'Paste 32-char key…'; }, 2000); }
+  }).catch(() => {});
+}
+
+function applySyncKey() {
+  const val = (document.getElementById('sync-key-input')?.value || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(val)) { alert('Please enter a valid 32-character sync key.'); return; }
+  localStorage.setItem('ht3_syncKey', val);
+  localStorage.setItem('ht3_updatedAt', '0');
+  localUpdatedAt = 0;
+  syncKey = val;
+  closePopup();
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  attachSync();
+}
+
+function resetSyncKey() {
+  if (!confirm('Generate a new sync key? This will disconnect all other devices.')) return;
+  localStorage.removeItem('ht3_syncKey');
+  localStorage.setItem('ht3_updatedAt', '0');
+  localUpdatedAt = 0;
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  syncKey = null;
+  closePopup();
+  attachSync();
+}
+
+function exportJSON() {
+  const data = { habits, checks, times, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'habits-' + todayKey() + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importJSON() {
+  document.getElementById('import-file').click();
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!Array.isArray(data.habits)) throw new Error('missing habits');
+      habits = data.habits;
+      checks = data.checks || {};
+      times = data.times || {};
+      save();
+      render();
+      closePopup();
+    } catch {
+      alert('Import failed — make sure you select a valid habits export file.');
+    }
+  };
+  reader.readAsText(file);
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // PWA install prompt
 let deferredPrompt = null;
