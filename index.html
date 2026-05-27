@@ -13,6 +13,8 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml"/>
   <title>Habit Tracker</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/tabler-icons.min.css"/>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --color-text-primary: #111827;
@@ -189,7 +191,7 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "646881871024",
   appId: "1:646881871024:web:1414bf@db728ec7160a775"
 };
-const SYNC_READY = FIREBASE_CONFIG.apiKey !== "AIzaSyCNLpnZFXsZkcDvi4cc0L5tV3KE1S_Sfhy";
+const SYNC_READY = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
 let db = null;
 if (SYNC_READY) {
   firebase.initializeApp(FIREBASE_CONFIG);
@@ -743,7 +745,5 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" defer></script>
 </body>
 </html>
