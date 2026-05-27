@@ -13,8 +13,6 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml"/>
   <title>Habit Tracker</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/tabler-icons.min.css"/>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <style>
     :root {
       --color-text-primary: #111827;
@@ -129,6 +127,12 @@
     .popup-btn.primary:hover{background:#0F6E56}
     .popup-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:10px 0}
 
+    /* Tools row */
+    .tools-row{display:flex;gap:8px;margin-bottom:1rem}
+    .tool-btn{height:32px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .tool-btn:hover{background:var(--color-background-secondary)}
+    .tool-btn i{font-size:14px}
+
     /* Install banner */
     #install-bar{display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--color-text-secondary)}
     #install-bar.visible{display:flex}
@@ -139,18 +143,25 @@
 <body>
 <div class="container">
   <div class="wrap">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-      <div class="title">Habit Tracker</div>
-      <button id="sync-btn" class="icon-btn" onclick="openSyncPopup()" aria-label="Sync settings" title="Sync" style="font-size:18px;color:var(--color-text-tertiary)">
-        <i class="ti ti-cloud" aria-hidden="true"></i>
-      </button>
-    </div>
+    <div class="title">Habit Tracker</div>
     <div class="subtitle" id="date-label"></div>
 
     <div id="install-bar">
       <span>Add to Home Screen for offline access</span>
       <button id="install-btn">Install</button>
       <button id="install-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+
+    <div class="tools-row">
+      <button id="sync-btn" class="tool-btn" onclick="openSyncPopup()">
+        <i class="ti ti-cloud" aria-hidden="true"></i> <span id="sync-label">Sync</span>
+      </button>
+      <button class="tool-btn" onclick="exportJSON()">
+        <i class="ti ti-download" aria-hidden="true"></i> Export
+      </button>
+      <button class="tool-btn" onclick="importJSON()">
+        <i class="ti ti-upload" aria-hidden="true"></i> Import
+      </button>
     </div>
 
     <div class="add-row">
@@ -171,14 +182,14 @@
 //        match /habits/{k} { allow read, write: if k.matches('[0-9a-f]{32}'); }
 //   3. Register a Web app in Project settings and paste the config below.
 const FIREBASE_CONFIG = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT.firebaseapp.com',
-  projectId: 'YOUR_PROJECT',
-  storageBucket: 'YOUR_PROJECT.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID'
+  apiKey: "AIzaSyCNLpnZFXsZkcDvi4cc0L5tV3KE1S_Sfhy",
+  authDomain: "habit-tracker-claude-cc@1a.firebaseapp.com",
+  projectId: "habit-tracker-claude-cc01a",
+  storageBucket: "habit-tracker-claude-cc0la.firebasestorage.app",
+  messagingSenderId: "646881871024",
+  appId: "1:646881871024:web:1414bf@db728ec7160a775"
 };
-const SYNC_READY = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
+const SYNC_READY = FIREBASE_CONFIG.apiKey !== "AIzaSyCNLpnZFXsZkcDvi4cc0L5tV3KE1S_Sfhy";
 let db = null;
 if (SYNC_READY) {
   firebase.initializeApp(FIREBASE_CONFIG);
@@ -540,10 +551,11 @@ attachSync();
 function setSyncStatus(s) {
   syncStatus = s;
   const btn = document.getElementById('sync-btn');
+  const lbl = document.getElementById('sync-label');
   if (!btn) return;
   const color = { synced: '#1D9E75', syncing: '#F59E0B', offline: '#9CA3AF', error: '#E24B4A' }[s] || '#9CA3AF';
   btn.style.color = color;
-  btn.title = { synced: 'Synced', syncing: 'Syncing…', offline: 'Offline', error: 'Sync error' }[s] || 'Sync';
+  if (lbl) lbl.textContent = { synced: 'Synced', syncing: 'Syncing…', offline: 'Sync', error: 'Sync error' }[s] || 'Sync';
 }
 
 function getSyncKey() {
@@ -731,5 +743,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js" defer></script>
 </body>
 </html>
