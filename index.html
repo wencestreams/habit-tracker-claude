@@ -61,7 +61,8 @@
     .add-row button:hover{background:var(--color-background-secondary)}
     .habit-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px}
     .habit-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-    .expand-btn{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:16px;padding:2px;line-height:1;transition:transform .2s}
+    .expand-btn{background:none;border:none;cursor:pointer;color:var(--color-text-primary);font-size:16px;padding:2px;line-height:1;transition:transform .2s;opacity:.55}
+    .expand-btn:hover{opacity:1}
     .expand-btn.open{transform:rotate(90deg)}
     .habit-name{font-size:15px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .time-badge{font-size:12px;color:var(--color-text-secondary);white-space:nowrap;margin-right:2px}
@@ -270,8 +271,12 @@ function addHabit() {
 }
 
 function deleteHabit(id) {
-  habits = habits.filter(h => h.id !== id);
-  save(); render();
+  const h = habits.find(x => x.id === id);
+  if (!h) return;
+  confirmAction(`Delete "${h.name}" and all its history?`, () => {
+    habits = habits.filter(x => x.id !== id);
+    save(); render();
+  });
 }
 
 function addSub(hid) {
@@ -288,8 +293,27 @@ function addSub(hid) {
 function deleteSub(hid, sid) {
   const h = habits.find(x => x.id === hid);
   if (!h) return;
-  h.subs = h.subs.filter(s => s.id !== sid);
-  save(); render();
+  const s = h.subs.find(x => x.id === sid);
+  if (!s) return;
+  confirmAction(`Delete "${s.name}"?`, () => {
+    h.subs = h.subs.filter(x => x.id !== sid);
+    save(); render();
+  });
+}
+
+function confirmAction(msg, onConfirm) {
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Confirm delete</div>
+        <div class="popup-sub" style="margin-bottom:16px">${esc(msg)}</div>
+        <div class="popup-actions">
+          <button class="popup-btn danger" id="confirm-yes">Delete</button>
+          <button class="popup-btn" onclick="closePopup()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('confirm-yes').onclick = () => { closePopup(); onConfirm(); };
 }
 
 function toggleExpand(id) { expanded[id] = !expanded[id]; render(); }
@@ -462,7 +486,7 @@ function render() {
 
     html += `<div class="habit-card">
       <div class="habit-top">
-        <button class="expand-btn icon-btn ${isOpen ? 'open' : ''}" onclick="toggleExpand('${h.id}')" aria-label="Expand">
+        <button class="expand-btn ${isOpen ? 'open' : ''}" onclick="toggleExpand('${h.id}')" aria-label="Expand">
           <i class="ti ti-chevron-right" aria-hidden="true"></i>
         </button>
         <span class="habit-name">${esc(h.name)}${pTimeStr}</span>
