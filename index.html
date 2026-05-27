@@ -78,15 +78,15 @@
     .dots::-webkit-scrollbar-track{background:transparent}
     .dots::-webkit-scrollbar-thumb{background:var(--color-border-secondary);border-radius:2px}
 
-    .dot-col{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0}
+    .dot-col{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;min-width:28px;max-width:48px}
     .day-label{font-size:10px;color:var(--color-text-tertiary);text-align:center}
     .date-num{font-size:9px;color:var(--color-text-tertiary);text-align:center;margin-bottom:2px}
-    .dot{width:28px;height:28px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-text-tertiary);transition:background .15s;position:relative}
+    .dot{width:100%;aspect-ratio:1;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--color-text-tertiary);transition:background .15s;position:relative}
     .dot.done{background:#1D9E75;border-color:#0F6E56}
     .dot.done i{color:#fff}
     .dot.parent-done{background:#9FE1CB;border-color:#5DCAA5;cursor:default}
     .dot:hover:not(.parent-done){border-color:var(--color-border-primary)}
-    .sub-dot{width:22px;height:22px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+    .sub-dot{width:24px;height:24px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
     .sub-dot.done{background:#1D9E75;border-color:#0F6E56}
     .sub-dot.done i{color:#fff;font-size:9px}
     .sub-dot:hover{border-color:var(--color-border-primary)}
@@ -216,6 +216,13 @@ function fmtTime(mins) {
   if (mins < 60) return mins + 'm';
   const h = Math.floor(mins / 60), m = mins % 60;
   return m ? h + 'h ' + m + 'm' : h + 'h';
+}
+
+function fmtTimeCompact(mins) {
+  if (!mins || mins <= 0) return '';
+  if (mins < 60) return mins + 'm';
+  const h = mins / 60;
+  return (Number.isInteger(h) ? h : h.toFixed(1)) + 'h';
 }
 
 function load() {
@@ -465,7 +472,7 @@ function render() {
           <div class="day-label">${dayLabel(d)}</div>
           <div class="date-num">${d.getDate()}</div>
           <div class="dot ${done ? 'done' : ''}" onclick="openPopup('${h.id}','${ds}',false,'${escAttr(h.name)}')" style="${todayStyle}" title="${ds}">
-            ${done ? (t > 0 ? '<span style="font-size:8px;color:#fff;font-weight:500">' + fmtTime(t) + '</span>' : '<i class="ti ti-check" aria-hidden="true"></i>') : ''}
+            ${done ? (t > 0 ? '<span style="font-size:8px;color:#fff;font-weight:500">' + fmtTimeCompact(t) + '</span>' : '<i class="ti ti-check" aria-hidden="true"></i>') : ''}
           </div></div>`;
       } else {
         const anyDone = parentCheckedOn(h, ds);
@@ -507,7 +514,7 @@ function render() {
             <div class="sub-day-label">${dayLabel(d)}</div>
             <div class="sub-date-num">${d.getDate()}</div>
             <div class="sub-dot ${done ? 'done' : ''}" onclick="openPopup('${s.id}','${ds}',true,'${escAttr(s.name)}')" style="${isToday ? 'border-color:var(--color-border-primary);' : ''}" title="${ds}">
-              ${done ? (t > 0 ? '<span style="font-size:7px;color:#fff;font-weight:500">' + fmtTime(t) + '</span>' : '<i class="ti ti-check" aria-hidden="true"></i>') : ''}
+              ${done ? (t > 0 ? '<span style="font-size:7px;color:#fff;font-weight:500">' + fmtTimeCompact(t) + '</span>' : '<i class="ti ti-check" aria-hidden="true"></i>') : ''}
             </div></div>`;
         });
         html += `</div></div>`;
@@ -520,6 +527,9 @@ function render() {
     html += `</div>`;
   });
   list.innerHTML = html;
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.dots').forEach(el => { el.scrollLeft = el.scrollWidth; });
+  });
 }
 
 document.getElementById('new-habit').addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
