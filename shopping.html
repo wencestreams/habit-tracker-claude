@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Shopping"/>
   <link rel="manifest" href="manifest-shopping.json"/>
-  <link rel="apple-touch-icon" href="icon-shopping.svg"/>
-  <link rel="icon" href="icon-shopping.svg" type="image/svg+xml"/>
+  <link rel="apple-touch-icon" href="icon-shopping.png"/>
+  <link rel="icon" href="icon-shopping.png" type="image/png"/>
   <title>Shopping List</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -43,37 +43,37 @@
     }
 
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{
-      min-height:100%;
-      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-      background:var(--color-background-secondary);
-      color:var(--color-text-primary);
-      -webkit-font-smoothing:antialiased;
-    }
+    html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--color-background-secondary);color:var(--color-text-primary);-webkit-font-smoothing:antialiased}
     .container{max-width:600px;margin:0 auto;padding:0 1rem}
     .wrap{padding:1.5rem 0}
 
+    /* Header */
     .header-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
-    .title{font-size:18px;font-weight:600;flex:1}
-    .sync-btn{height:32px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .title-btn{display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-size:18px;font-weight:600;color:var(--color-text-primary);padding:0;flex:1;min-width:0}
+    .title-btn-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .title-btn svg{color:var(--color-text-secondary);flex-shrink:0}
+    .sync-btn{height:32px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
     .sync-btn:hover{background:var(--color-background-secondary)}
 
+    /* Install banner */
     #install-bar{display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--color-text-secondary)}
     #install-bar.visible{display:flex}
     #install-bar button{height:28px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--accent-dark);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;white-space:nowrap}
     #install-dismiss{background:none;border:none;color:var(--color-text-tertiary);cursor:pointer;font-size:18px;line-height:1;padding:2px}
 
+    /* Store tabs */
     .tabs-wrap{display:flex;align-items:center;gap:6px;margin-bottom:1rem}
     .tabs-scroll{display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .tabs-scroll::-webkit-scrollbar{display:none}
     .tab{display:flex;align-items:center;gap:5px;height:34px;padding:0 14px;border-radius:99px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .1s}
     .tab:hover{background:var(--color-background-secondary)}
     .tab.active{background:var(--accent);border-color:var(--accent-dark);color:#fff}
-    .tab-edit-btn{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);border:none;cursor:pointer;padding:0;color:#fff;line-height:1;flex-shrink:0}
+    .tab-edit-btn{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.25);border:none;cursor:pointer;padding:0;line-height:1;flex-shrink:0}
     .tab-edit-btn:hover{background:rgba(255,255,255,0.4)}
     .add-tab-btn{height:34px;width:34px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .add-tab-btn:hover{background:var(--color-background-secondary)}
 
+    /* Items */
     .item-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;cursor:pointer;transition:background .1s}
     .item-row:hover{background:var(--color-background-secondary)}
     .item-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--color-border-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .1s,border-color .1s}
@@ -87,6 +87,7 @@
     .checked-divider{font-size:12px;color:var(--color-text-tertiary);padding:10px 0 6px;display:flex;align-items:center;gap:8px}
     .checked-divider::after{content:'';flex:1;height:0.5px;background:var(--color-border-secondary)}
 
+    /* Add form */
     .add-row{display:flex;gap:6px;margin-bottom:8px}
     .add-row input{height:40px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px}
     .add-row input:focus{outline:none;box-shadow:0 0 0 2px #3B82F644}
@@ -98,11 +99,26 @@
     .action-btn{height:32px;padding:0 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer}
     .action-btn:hover{background:var(--color-background-secondary)}
 
+    /* Empty states */
     .empty{text-align:center;padding:2.5rem 1rem;color:var(--color-text-tertiary);font-size:14px}
-    .no-lists{text-align:center;padding:3rem 1rem}
+    .no-stores{text-align:center;padding:3rem 1rem}
 
+    /* Connection list in popup */
+    .conn-list{display:flex;flex-direction:column;margin-bottom:4px}
+    .conn-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+    .conn-row:last-child{border-bottom:none}
+    .conn-name{flex:1;font-size:14px;font-weight:500;cursor:pointer;color:var(--color-text-primary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .conn-row.active .conn-name{color:var(--accent)}
+    .conn-actions{display:flex;gap:4px;flex-shrink:0}
+    .conn-action-btn{height:26px;padding:0 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:none;color:var(--color-text-secondary);font-size:11px;cursor:pointer;white-space:nowrap}
+    .conn-action-btn:hover{background:var(--color-background-secondary)}
+    .conn-action-btn.danger{color:#E24B4A;border-color:#F09595}
+    .conn-action-btn.danger:hover{background:#FCEBEB}
+
+    /* Popup */
     .popup-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);padding:1rem}
     .popup{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;width:100%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+    .popup-wide{max-width:340px}
     .popup-title{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
     .popup-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:12px}
     .popup-actions{display:flex;gap:6px;flex-wrap:wrap}
@@ -121,7 +137,10 @@
 <div class="container">
   <div class="wrap">
     <div class="header-row">
-      <div class="title">Shopping</div>
+      <button id="list-picker-btn" class="title-btn" onclick="openListPickerPopup()">
+        <span id="active-list-name" class="title-btn-name">Shopping</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
       <button id="sync-btn" class="sync-btn" onclick="openSyncPopup()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
         <span id="sync-label">Sync</span>
@@ -161,7 +180,7 @@
 
 <script>
 // ─── Firebase ─────────────────────────────────────────────────────────────────
-// Add this rule to Firestore security rules:
+// Firestore security rule required:
 //   match /shopping/{k} { allow read, write: if k.matches('[0-9a-f]{32}'); }
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCNLpnZFXsZkcDvi4cc0L5tV3KE1S_Sfhy",
@@ -178,18 +197,18 @@ if (SYNC_READY) {
   db = firebase.firestore();
   db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
 }
-let syncKey = null, syncUnsub = null;
-let localUpdatedAt = parseInt(localStorage.getItem('sl1_updatedAt') || '0', 10);
-let syncStatus = 'offline';
+let syncKey = null, syncUnsub = null, syncStatus = 'offline';
+let localUpdatedAt = 0;
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ICON_TRASH  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 const ICON_CHECK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-const ICON_PENCIL = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const ICON_PENCIL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 
 // ─── State ────────────────────────────────────────────────────────────────────
-// lists: { [listId]: { name: string, items: [{ id, name, qty, checked, addedAt }] } }
-// listOrder: listId[]  — tab display order
+// connections: [{ id, name, syncKey }] — local names never synced to Firestore
+// Each connection maps to one Firestore doc: shopping/{syncKey}
+let connections = [], activeConnectionId = null;
 let lists = {}, listOrder = [], activeListId = null;
 
 function esc(s) {
@@ -197,31 +216,256 @@ function esc(s) {
 }
 function escAttr(s) { return esc(s).replace(/'/g,'&#39;'); }
 
+function newRandomKey() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ─── Persistence ──────────────────────────────────────────────────────────────
 function load() {
-  try { lists = JSON.parse(localStorage.getItem('sl1_lists') || '{}'); } catch { lists = {}; }
-  try { listOrder = JSON.parse(localStorage.getItem('sl1_listOrder') || '[]'); } catch { listOrder = []; }
-  listOrder = listOrder.filter(id => lists[id]);
+  try { connections = JSON.parse(localStorage.getItem('sl1_connections') || '[]'); } catch { connections = []; }
 
-  const saved = localStorage.getItem('sl1_activeListId');
-  if (saved && lists[saved]) activeListId = saved;
-  else if (listOrder.length) activeListId = listOrder[0];
-  else activeListId = null;
+  if (!connections.length) {
+    // Migrate from old single-key format
+    const oldKey = localStorage.getItem('sl1_syncKey');
+    const id = 'c' + Date.now();
+    if (oldKey) {
+      try {
+        const oldData = {
+          lists: JSON.parse(localStorage.getItem('sl1_lists') || '{}'),
+          listOrder: JSON.parse(localStorage.getItem('sl1_listOrder') || '[]')
+        };
+        localStorage.setItem('sl1_data_' + oldKey, JSON.stringify(oldData));
+        localStorage.setItem('sl1_updatedAt_' + oldKey, localStorage.getItem('sl1_updatedAt') || '0');
+      } catch {}
+      connections = [{ id, name: 'My List', syncKey: oldKey }];
+    } else {
+      connections = [{ id, name: 'My List', syncKey: newRandomKey() }];
+    }
+    saveConnections();
+    activeConnectionId = id;
+    localStorage.setItem('sl1_activeConnectionId', id);
+  } else {
+    const savedId = localStorage.getItem('sl1_activeConnectionId');
+    activeConnectionId = connections.find(c => c.id === savedId) ? savedId : connections[0].id;
+  }
 
+  loadConnectionData();
   render();
 }
 
+function loadConnectionData() {
+  const conn = connections.find(c => c.id === activeConnectionId);
+  if (!conn) return;
+  syncKey = conn.syncKey;
+  localUpdatedAt = parseInt(localStorage.getItem('sl1_updatedAt_' + syncKey) || '0', 10);
+  try {
+    const data = JSON.parse(localStorage.getItem('sl1_data_' + syncKey) || '{}');
+    lists = data.lists || {};
+    listOrder = (data.listOrder || []).filter(id => lists[id]);
+  } catch { lists = {}; listOrder = []; }
+  const savedStoreId = localStorage.getItem('sl1_activeStoreId_' + syncKey);
+  if (savedStoreId && lists[savedStoreId]) activeListId = savedStoreId;
+  else if (listOrder.length) activeListId = listOrder[0];
+  else activeListId = null;
+}
+
 function save() {
-  localStorage.setItem('sl1_lists', JSON.stringify(lists));
-  localStorage.setItem('sl1_listOrder', JSON.stringify(listOrder));
-  if (activeListId) localStorage.setItem('sl1_activeListId', activeListId);
-  if (db && syncKey) {
+  if (!syncKey) return;
+  localStorage.setItem('sl1_data_' + syncKey, JSON.stringify({ lists, listOrder }));
+  if (activeListId) localStorage.setItem('sl1_activeStoreId_' + syncKey, activeListId);
+  if (db) {
     setSyncStatus('syncing');
     db.collection('shopping').doc(syncKey).set({
       lists, listOrder,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => setSyncStatus('synced')).catch(() => setSyncStatus('error'));
   }
+}
+
+function saveConnections() {
+  localStorage.setItem('sl1_connections', JSON.stringify(connections));
+}
+
+// ─── Connection (list) management ─────────────────────────────────────────────
+function switchConnection(id) {
+  if (id === activeConnectionId) { closePopup(); return; }
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  activeConnectionId = id;
+  localStorage.setItem('sl1_activeConnectionId', id);
+  loadConnectionData();
+  render();
+  attachSync();
+  closePopup();
+}
+
+function openListPickerPopup() {
+  const rows = connections.map(conn => {
+    const isActive = conn.id === activeConnectionId;
+    const canDelete = connections.length > 1;
+    return `<div class="conn-row${isActive ? ' active' : ''}">
+      <span class="conn-name" onclick="${isActive ? 'closePopup()' : `switchConnection('${escAttr(conn.id)}')`}">${esc(conn.name)}${isActive ? ' ✓' : ''}</span>
+      <div class="conn-actions">
+        <button class="conn-action-btn" onclick="copyConnKey('${escAttr(conn.id)}',this)">Share</button>
+        <button class="conn-action-btn" onclick="renameConnPopup('${escAttr(conn.id)}')">Rename</button>
+        ${canDelete ? `<button class="conn-action-btn danger" onclick="deleteConnConfirm('${escAttr(conn.id)}')">Delete</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup popup-wide">
+        <div class="popup-title">My Shopping Lists</div>
+        <div class="popup-sub">Tap a list to switch. Names are local only.</div>
+        <div class="conn-list">${rows}</div>
+        <hr class="popup-divider"/>
+        <div class="popup-actions" style="margin-bottom:8px">
+          <button class="popup-btn primary" onclick="addConnPopup()">+ New list</button>
+          <button class="popup-btn" onclick="linkConnPopup()">Link existing</button>
+        </div>
+        <div class="popup-actions">
+          <button class="popup-btn" onclick="closePopup()">Close</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function copyConnKey(id, btn) {
+  const conn = connections.find(c => c.id === id);
+  if (!conn) return;
+  navigator.clipboard.writeText(conn.syncKey).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => {});
+}
+
+function addConnPopup() {
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">New shopping list</div>
+        <div class="popup-sub">Give it a name — only visible to you on this device</div>
+        <input class="popup-input" id="new-conn-name" type="text" placeholder="e.g. Family, Personal…" maxlength="40"
+          onkeydown="if(event.key==='Enter')confirmAddConn()"/>
+        <div class="popup-actions">
+          <button class="popup-btn primary" onclick="confirmAddConn()">Create</button>
+          <button class="popup-btn" onclick="openListPickerPopup()">Back</button>
+        </div>
+      </div>
+    </div>`;
+  requestAnimationFrame(() => { const i = document.getElementById('new-conn-name'); if (i) i.focus(); });
+}
+
+function confirmAddConn() {
+  const inp = document.getElementById('new-conn-name');
+  const name = (inp ? inp.value.trim() : '') || 'New List';
+  const id = 'c' + Date.now();
+  connections.push({ id, name, syncKey: newRandomKey() });
+  saveConnections();
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  activeConnectionId = id;
+  localStorage.setItem('sl1_activeConnectionId', id);
+  loadConnectionData();
+  render();
+  attachSync();
+  closePopup();
+}
+
+function linkConnPopup() {
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Link an existing list</div>
+        <div class="popup-sub">Enter the sync key someone shared with you</div>
+        <input class="popup-input" id="link-conn-name" type="text" placeholder="Local name (only visible to you)" maxlength="40"/>
+        <input class="popup-input" id="link-conn-key" type="text" placeholder="32-character sync key" maxlength="32"
+          style="font-family:monospace;font-size:12px" onkeydown="if(event.key==='Enter')confirmLinkConn()"/>
+        <div class="popup-actions">
+          <button class="popup-btn primary" onclick="confirmLinkConn()">Link</button>
+          <button class="popup-btn" onclick="openListPickerPopup()">Back</button>
+        </div>
+      </div>
+    </div>`;
+  requestAnimationFrame(() => { const i = document.getElementById('link-conn-name'); if (i) i.focus(); });
+}
+
+function confirmLinkConn() {
+  const key = (document.getElementById('link-conn-key')?.value || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(key)) { alert('Please enter a valid 32-character sync key.'); return; }
+  const name = (document.getElementById('link-conn-name')?.value || '').trim() || 'Shared List';
+  const existing = connections.find(c => c.syncKey === key);
+  if (existing) { switchConnection(existing.id); return; }
+  const id = 'c' + Date.now();
+  connections.push({ id, name, syncKey: key });
+  saveConnections();
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  activeConnectionId = id;
+  localStorage.setItem('sl1_activeConnectionId', id);
+  loadConnectionData();
+  render();
+  attachSync();
+  closePopup();
+}
+
+function renameConnPopup(id) {
+  const conn = connections.find(c => c.id === id);
+  if (!conn) return;
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Rename list</div>
+        <div class="popup-sub">This name is only visible to you on this device</div>
+        <input class="popup-input" id="rename-conn-inp" type="text" value="${escAttr(conn.name)}" maxlength="40"
+          onkeydown="if(event.key==='Enter')confirmRenameConn('${escAttr(id)}')"/>
+        <div class="popup-actions">
+          <button class="popup-btn primary" onclick="confirmRenameConn('${escAttr(id)}')">Save</button>
+          <button class="popup-btn" onclick="openListPickerPopup()">Back</button>
+        </div>
+      </div>
+    </div>`;
+  requestAnimationFrame(() => { const i = document.getElementById('rename-conn-inp'); if (i) { i.focus(); i.select(); } });
+}
+
+function confirmRenameConn(id) {
+  const name = (document.getElementById('rename-conn-inp')?.value || '').trim();
+  if (!name) return;
+  const conn = connections.find(c => c.id === id);
+  if (!conn) return;
+  conn.name = name;
+  saveConnections();
+  renderHeader();
+  openListPickerPopup();
+}
+
+function deleteConnConfirm(id) {
+  const conn = connections.find(c => c.id === id);
+  if (!conn || connections.length <= 1) return;
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Remove "${esc(conn.name)}"?</div>
+        <div class="popup-sub" style="margin-bottom:16px">Removes this list from your device only. Data in Firestore is not deleted.</div>
+        <div class="popup-actions">
+          <button class="popup-btn danger" id="confirm-del-conn">Remove</button>
+          <button class="popup-btn" onclick="openListPickerPopup()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('confirm-del-conn').onclick = () => {
+    connections = connections.filter(c => c.id !== id);
+    saveConnections();
+    if (activeConnectionId === id) {
+      if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+      activeConnectionId = connections[0].id;
+      localStorage.setItem('sl1_activeConnectionId', activeConnectionId);
+      loadConnectionData();
+      render();
+      attachSync();
+    }
+    closePopup();
+  };
 }
 
 // ─── Store operations ─────────────────────────────────────────────────────────
@@ -242,21 +486,20 @@ function addStore() {
 }
 
 function confirmAddStore() {
-  const inp = document.getElementById('new-store-inp');
-  const name = (inp ? inp.value : '').trim();
+  const name = (document.getElementById('new-store-inp')?.value || '').trim();
   if (!name) return;
   const id = 'l' + Date.now();
   lists[id] = { name, items: [] };
   listOrder.push(id);
   activeListId = id;
-  localStorage.setItem('sl1_activeListId', id);
+  if (syncKey) localStorage.setItem('sl1_activeStoreId_' + syncKey, id);
   closePopup(); save(); render();
 }
 
 function switchStore(id) {
   if (!lists[id] || id === activeListId) return;
   activeListId = id;
-  localStorage.setItem('sl1_activeListId', id);
+  if (syncKey) localStorage.setItem('sl1_activeStoreId_' + syncKey, id);
   renderTabs(); renderItems();
 }
 
@@ -282,8 +525,7 @@ function editStorePopup(id) {
 }
 
 function applyRenameStore(id) {
-  const inp = document.getElementById('store-name-inp');
-  const name = (inp ? inp.value : '').trim();
+  const name = (document.getElementById('store-name-inp')?.value || '').trim();
   if (!name || !lists[id]) return;
   lists[id].name = name;
   closePopup(); save(); render();
@@ -296,20 +538,22 @@ function deleteStoreConfirm(id) {
     <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
       <div class="popup">
         <div class="popup-title">Delete "${esc(storeName)}"?</div>
-        <div class="popup-sub" style="margin-bottom:16px">All items in this list will be permanently deleted.</div>
+        <div class="popup-sub" style="margin-bottom:16px">All items in this store will be permanently deleted.</div>
         <div class="popup-actions">
-          <button class="popup-btn danger" id="confirm-del">Delete</button>
+          <button class="popup-btn danger" id="confirm-del-store">Delete</button>
           <button class="popup-btn" onclick="closePopup()">Cancel</button>
         </div>
       </div>
     </div>`;
-  document.getElementById('confirm-del').onclick = () => {
+  document.getElementById('confirm-del-store').onclick = () => {
     delete lists[id];
     listOrder = listOrder.filter(x => x !== id);
     if (activeListId === id) {
       activeListId = listOrder.length ? listOrder[0] : null;
-      if (activeListId) localStorage.setItem('sl1_activeListId', activeListId);
-      else localStorage.removeItem('sl1_activeListId');
+      if (syncKey) {
+        if (activeListId) localStorage.setItem('sl1_activeStoreId_' + syncKey, activeListId);
+        else localStorage.removeItem('sl1_activeStoreId_' + syncKey);
+      }
     }
     closePopup(); save(); render();
   };
@@ -354,7 +598,13 @@ function clearChecked() {
 function closePopup() { document.getElementById('popup-root').innerHTML = ''; }
 
 // ─── Render ───────────────────────────────────────────────────────────────────
-function render() { renderTabs(); renderItems(); }
+function render() { renderHeader(); renderTabs(); renderItems(); }
+
+function renderHeader() {
+  const conn = connections.find(c => c.id === activeConnectionId);
+  const el = document.getElementById('active-list-name');
+  if (el) el.textContent = conn ? conn.name : 'Shopping';
+}
 
 function renderTabs() {
   const scroll = document.getElementById('tabs-scroll');
@@ -377,10 +627,10 @@ function renderItems() {
 
   if (!listOrder.length) {
     el.innerHTML = `
-      <div class="no-lists">
+      <div class="no-stores">
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <div style="font-size:15px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px">No stores yet</div>
-        <div style="font-size:13px;color:var(--color-text-tertiary)">Tap + to add your first shopping list</div>
+        <div style="font-size:13px;color:var(--color-text-tertiary)">Tap + to add your first store</div>
       </div>`;
     return;
   }
@@ -432,20 +682,8 @@ function setSyncStatus(s) {
   if (lbl) lbl.textContent = { synced:'Synced', syncing:'Syncing…', offline:'Sync', error:'Sync error' }[s] || 'Sync';
 }
 
-function getSyncKey() {
-  let key = localStorage.getItem('sl1_syncKey');
-  if (!key) {
-    const arr = new Uint8Array(16);
-    crypto.getRandomValues(arr);
-    key = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
-    localStorage.setItem('sl1_syncKey', key);
-  }
-  return key;
-}
-
 function attachSync() {
-  if (!SYNC_READY || !db) { setSyncStatus('offline'); return; }
-  syncKey = getSyncKey();
+  if (!SYNC_READY || !db || !syncKey) { setSyncStatus('offline'); return; }
   setSyncStatus('syncing');
   if (syncUnsub) { syncUnsub(); syncUnsub = null; }
   syncUnsub = db.collection('shopping').doc(syncKey)
@@ -460,9 +698,8 @@ function attachSync() {
         listOrder = (data.listOrder || []).filter(id => lists[id]);
         if (!lists[activeListId]) activeListId = listOrder.length ? listOrder[0] : null;
         localUpdatedAt = cloudTs;
-        localStorage.setItem('sl1_lists', JSON.stringify(lists));
-        localStorage.setItem('sl1_listOrder', JSON.stringify(listOrder));
-        localStorage.setItem('sl1_updatedAt', String(cloudTs));
+        localStorage.setItem('sl1_data_' + syncKey, JSON.stringify({ lists, listOrder }));
+        localStorage.setItem('sl1_updatedAt_' + syncKey, String(cloudTs));
         render();
       }
     }, () => setSyncStatus('error'));
@@ -474,26 +711,27 @@ function openSyncPopup() {
       <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
         <div class="popup">
           <div class="popup-title">Sync not configured</div>
-          <div class="popup-sub" style="margin-bottom:16px">Add your Firebase project config to <code>shopping.html</code> to enable sync.</div>
+          <div class="popup-sub" style="margin-bottom:16px">Add your Firebase project config to enable sync.</div>
           <div class="popup-actions"><button class="popup-btn primary" onclick="closePopup()">Close</button></div>
         </div>
       </div>`;
     return;
   }
-  const key = syncKey || getSyncKey();
-  const masked = key.slice(0, 8) + '…' + key.slice(-4);
+  const conn = connections.find(c => c.id === activeConnectionId);
+  const connName = conn ? conn.name : 'My List';
+  const masked = syncKey ? syncKey.slice(0, 8) + '…' + syncKey.slice(-4) : '—';
   const statusLabel = { synced:'Synced ✓', syncing:'Syncing…', offline:'Offline', error:'Error' }[syncStatus] || '';
   document.getElementById('popup-root').innerHTML = `
     <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
       <div class="popup">
-        <div class="popup-title">Sync settings</div>
+        <div class="popup-title">Sync — ${esc(connName)}</div>
         <div class="popup-sub">${statusLabel}</div>
-        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Your sync key</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Sync key for this list</div>
         <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
           <code style="flex:1;font-size:11px;background:var(--color-background-secondary);padding:6px 8px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${masked}</code>
-          <button class="popup-btn" style="flex:0;padding:0 12px" onclick="copySyncKey()">Copy</button>
+          <button class="popup-btn" style="flex:0;padding:0 12px" onclick="copySyncKey(this)">Copy</button>
         </div>
-        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Link another device</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Link another device to this list</div>
         <div style="display:flex;gap:6px;margin-bottom:12px">
           <input id="sync-key-input" type="text" maxlength="32" placeholder="Paste 32-char key…"
             style="flex:1;height:30px;padding:0 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:12px;font-family:monospace"/>
@@ -508,33 +746,38 @@ function openSyncPopup() {
     </div>`;
 }
 
-function copySyncKey() {
-  const key = syncKey || getSyncKey();
-  navigator.clipboard.writeText(key).then(() => {
-    const inp = document.getElementById('sync-key-input');
-    if (inp) { inp.placeholder = 'Copied!'; setTimeout(() => { inp.placeholder = 'Paste 32-char key…'; }, 2000); }
+function copySyncKey(btn) {
+  if (!syncKey) return;
+  navigator.clipboard.writeText(syncKey).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
   }).catch(() => {});
 }
 
 function applySyncKey() {
   const val = (document.getElementById('sync-key-input')?.value || '').trim().toLowerCase();
   if (!/^[0-9a-f]{32}$/.test(val)) { alert('Please enter a valid 32-character sync key.'); return; }
-  localStorage.setItem('sl1_syncKey', val);
-  localStorage.setItem('sl1_updatedAt', '0');
-  localUpdatedAt = 0;
+  const conn = connections.find(c => c.id === activeConnectionId);
+  if (!conn) return;
+  conn.syncKey = val;
+  saveConnections();
   syncKey = val;
-  closePopup();
+  localUpdatedAt = 0;
   if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  closePopup();
   attachSync();
 }
 
 function resetSyncKey() {
-  if (!confirm('Generate a new sync key? All other devices will be disconnected.')) return;
-  localStorage.removeItem('sl1_syncKey');
-  localStorage.setItem('sl1_updatedAt', '0');
+  if (!confirm('Generate a new sync key for this list? All other devices will be disconnected.')) return;
+  const conn = connections.find(c => c.id === activeConnectionId);
+  if (!conn) return;
+  conn.syncKey = newRandomKey();
+  saveConnections();
+  syncKey = conn.syncKey;
   localUpdatedAt = 0;
   if (syncUnsub) { syncUnsub(); syncUnsub = null; }
-  syncKey = null;
   closePopup();
   attachSync();
 }

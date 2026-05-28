@@ -1,4 +1,4 @@
-const CACHE = 'shopping-v1';
+const CACHE = 'shopping-v2';
 const LOCAL_ASSETS = ['shopping.html', 'manifest-shopping.json', 'icon-shopping.svg'];
 
 self.addEventListener('install', e => {
