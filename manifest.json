@@ -3,6 +3,7 @@
   "short_name": "Habits",
   "description": "Track your daily habits with streaks and time logging",
   "start_url": ".",
+  "id": "/habit-tracker-claude/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1D9E75",
