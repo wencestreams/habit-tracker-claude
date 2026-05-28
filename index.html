@@ -205,6 +205,11 @@ let localUpdatedAt = parseInt(localStorage.getItem('ht3_updatedAt') || '0', 10);
 let syncStatus = 'offline';
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Inline SVGs for critical buttons — no font dependency
+const ICON_CHEVRON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+const ICON_TRASH   = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+const ICON_X       = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+
 const TODAY = new Date();
 const DAYS = 21;
 let habits = [], checks = {}, times = {}, expanded = {};
@@ -456,7 +461,7 @@ function renderPopup() {
       </div>
       <hr class="popup-divider"/>
       <div class="popup-actions">
-        <button class="popup-btn danger" onclick="removeCheck()"><i class="ti ti-trash" aria-hidden="true"></i> Remove</button>
+        <button class="popup-btn danger" onclick="removeCheck()" style="display:flex;align-items:center;gap:5px">${ICON_TRASH} Remove</button>
         <button class="popup-btn" onclick="closePopup()">Cancel</button>
       </div>`;
   }
@@ -488,12 +493,12 @@ function render() {
     html += `<div class="habit-card">
       <div class="habit-top">
         <button class="expand-btn ${isOpen ? 'open' : ''}" onclick="toggleExpand('${h.id}')" aria-label="Expand">
-          <i class="ti ti-chevron-right" aria-hidden="true"></i>
+          ${ICON_CHEVRON}
         </button>
         <span class="habit-name">${esc(h.name)}${pTimeStr}</span>
         <span class="streak ${hot ? 'hot' : ''}">${pStreak > 0 ? (hot ? '🔥 ' : '') + pStreak + ' day streak' : 'no streak'}</span>
         <button class="icon-btn del-btn" onclick="deleteHabit('${h.id}')" aria-label="Delete habit">
-          <i class="ti ti-trash" aria-hidden="true"></i>
+          ${ICON_TRASH}
         </button>
       </div>
       <div class="dots">`;
@@ -537,8 +542,8 @@ function render() {
             <i class="ti ti-corner-down-right" style="font-size:14px;color:var(--color-text-tertiary)" aria-hidden="true"></i>
             <span class="sub-name">${esc(s.name)}${sTimeStr}</span>
             <span class="sub-streak ${shot ? 'hot' : ''}">${sStreak > 0 ? (shot ? '🔥 ' : '') + sStreak + 'd' : '–'}</span>
-            <button class="icon-btn del-btn" onclick="deleteSub('${h.id}','${s.id}')" aria-label="Delete sub-habit" style="font-size:14px">
-              <i class="ti ti-x" aria-hidden="true"></i>
+            <button class="icon-btn del-btn" onclick="deleteSub('${h.id}','${s.id}')" aria-label="Delete sub-habit">
+              ${ICON_X}
             </button>
           </div>
           <div class="dots">`;
