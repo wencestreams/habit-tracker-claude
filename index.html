@@ -61,8 +61,8 @@
     .add-row button:hover{background:var(--color-background-secondary)}
     .habit-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:10px}
     .habit-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-    .expand-btn{background:none;border:none;cursor:pointer;color:var(--color-text-primary);font-size:16px;padding:2px;line-height:1;transition:transform .2s;opacity:.55}
-    .expand-btn:hover{opacity:1}
+    .expand-btn{background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:18px;padding:4px;line-height:1;transition:transform .2s,color .15s;border-radius:4px}
+    .expand-btn:hover{color:var(--color-text-primary);background:var(--color-background-secondary)}
     .expand-btn.open{transform:rotate(90deg)}
     .habit-name{font-size:15px;font-weight:500;color:var(--color-text-primary);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .time-badge{font-size:12px;color:var(--color-text-secondary);white-space:nowrap;margin-right:2px}
@@ -71,7 +71,8 @@
     @media(prefers-color-scheme:dark){.streak.hot{background:#4A2800;color:#FBBF24}}
     .icon-btn{background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);font-size:16px;padding:4px;line-height:1;border-radius:4px}
     .icon-btn:hover{color:var(--color-text-primary)}
-    .del-btn:hover{color:#E24B4A}
+    .del-btn{color:#E24B4A;opacity:.6}
+    .del-btn:hover{opacity:1;background:#FCEBEB}
 
     /* Dots row — horizontal scroll on small screens */
     .dots{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}

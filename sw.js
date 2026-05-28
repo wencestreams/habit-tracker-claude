@@ -1,4 +1,4 @@
-const CACHE = 'habit-tracker-v6';
+const CACHE = 'habit-tracker-v7';
 const LOCAL_ASSETS = ['./', 'index.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', e => {
