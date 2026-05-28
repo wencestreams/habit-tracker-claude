@@ -54,6 +54,9 @@
     .title-btn svg{color:var(--color-text-secondary);flex-shrink:0}
     .sync-btn{height:32px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
     .sync-btn:hover{background:var(--color-background-secondary)}
+    .notif-btn{height:32px;width:32px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .notif-btn:hover{background:var(--color-background-secondary)}
+    .notif-btn.active{color:var(--accent);border-color:var(--accent)}
 
     /* Install banner */
     #install-bar{display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--color-text-secondary)}
@@ -141,6 +144,7 @@
         <span id="active-list-name" class="title-btn-name">Shopping</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
+      <button id="notif-btn" class="notif-btn" onclick="toggleNotifications()" aria-label="Toggle notifications"></button>
       <button id="sync-btn" class="sync-btn" onclick="openSyncPopup()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
         <span id="sync-label">Sync</span>
@@ -199,11 +203,15 @@ if (SYNC_READY) {
 }
 let syncKey = null, syncUnsub = null, syncStatus = 'offline';
 let localUpdatedAt = 0;
+let notifsEnabled = localStorage.getItem('sl1_notifsEnabled') === '1';
+const locallyAddedIds = new Set();
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ICON_TRASH  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
 const ICON_CHECK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 const ICON_PENCIL = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const ICON_BELL     = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`;
+const ICON_BELL_OFF = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
 
 // ─── State ────────────────────────────────────────────────────────────────────
 // connections: [{ id, name, syncKey }] — local names never synced to Firestore
@@ -253,6 +261,7 @@ function load() {
 
   loadConnectionData();
   render();
+  updateNotifBtn();
 }
 
 function loadConnectionData() {
@@ -567,7 +576,9 @@ function addItem() {
   const name = (nameInp ? nameInp.value : '').trim();
   if (!name) { if (nameInp) nameInp.focus(); return; }
   const qty = (qtyInp ? qtyInp.value : '').trim();
-  lists[activeListId].items.unshift({ id: 'i' + Date.now(), name, qty, checked: false, addedAt: Date.now() });
+  const itemId = 'i' + Date.now();
+  locallyAddedIds.add(itemId);
+  lists[activeListId].items.unshift({ id: itemId, name, qty, checked: false, addedAt: Date.now() });
   if (nameInp) { nameInp.value = ''; nameInp.focus(); }
   if (qtyInp) qtyInp.value = '';
   save(); renderItems();
@@ -694,6 +705,10 @@ function attachSync() {
       const data = doc.data();
       const cloudTs = data.updatedAt ? data.updatedAt.toMillis() : 0;
       if (cloudTs > localUpdatedAt) {
+        const wasInitial = localUpdatedAt === 0;
+        const oldItemIds = new Set();
+        Object.values(lists).forEach(l => l.items?.forEach(it => oldItemIds.add(it.id)));
+
         lists = data.lists || {};
         listOrder = (data.listOrder || []).filter(id => lists[id]);
         if (!lists[activeListId]) activeListId = listOrder.length ? listOrder[0] : null;
@@ -701,6 +716,23 @@ function attachSync() {
         localStorage.setItem('sl1_data_' + syncKey, JSON.stringify({ lists, listOrder }));
         localStorage.setItem('sl1_updatedAt_' + syncKey, String(cloudTs));
         render();
+
+        if (!wasInitial && notifsEnabled && Notification.permission === 'granted' && document.hidden) {
+          const added = [];
+          Object.values(lists).forEach(l => {
+            l.items?.forEach(it => {
+              if (!oldItemIds.has(it.id) && !locallyAddedIds.has(it.id)) added.push({ item: it, listName: l.name });
+            });
+          });
+          if (added.length === 1) {
+            new Notification('Shopping List', { body: `${added[0].item.name} added to ${added[0].listName}`, icon: new URL('icon-shopping.png', location.href).href });
+          } else if (added.length > 1) {
+            const listName = added[0].listName;
+            const sameList = added.every(a => a.listName === listName);
+            new Notification('Shopping List', { body: `${added.length} items added${sameList ? ' to ' + listName : ''}`, icon: new URL('icon-shopping.png', location.href).href });
+          }
+        }
+        locallyAddedIds.clear();
       }
     }, () => setSyncStatus('error'));
 }
@@ -780,6 +812,47 @@ function resetSyncKey() {
   if (syncUnsub) { syncUnsub(); syncUnsub = null; }
   closePopup();
   attachSync();
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+function updateNotifBtn() {
+  const btn = document.getElementById('notif-btn');
+  if (!btn) return;
+  const supported = 'Notification' in window;
+  const granted = supported && Notification.permission === 'granted';
+  const on = granted && notifsEnabled;
+  btn.classList.toggle('active', on);
+  btn.innerHTML = on ? ICON_BELL : ICON_BELL_OFF;
+  btn.title = !supported ? 'Notifications not supported' :
+              Notification.permission === 'denied' ? 'Notifications blocked in browser settings' :
+              on ? 'Notifications on — click to turn off' : 'Notifications off — click to turn on';
+}
+
+async function toggleNotifications() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'denied') {
+    openInfoPopup('Notifications blocked', 'To enable notifications, allow them for this site in your browser settings.');
+    return;
+  }
+  if (notifsEnabled && Notification.permission === 'granted') {
+    notifsEnabled = false;
+  } else {
+    const perm = await Notification.requestPermission();
+    notifsEnabled = perm === 'granted';
+  }
+  localStorage.setItem('sl1_notifsEnabled', notifsEnabled ? '1' : '0');
+  updateNotifBtn();
+}
+
+function openInfoPopup(title, msg) {
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">${esc(title)}</div>
+        <div class="popup-sub" style="margin-bottom:16px">${esc(msg)}</div>
+        <div class="popup-actions"><button class="popup-btn primary" onclick="closePopup()">OK</button></div>
+      </div>
+    </div>`;
 }
 
 // ─── PWA ──────────────────────────────────────────────────────────────────────

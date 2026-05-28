@@ -66,9 +66,9 @@ Each app uses its own prefix to avoid collisions:
 | App           | Prefix  | Keys                                              |
 |---------------|---------|---------------------------------------------------|
 | Habit Tracker | `ht3_`  | `syncKey`, `updatedAt`, `habits`, `checks`, `times` |
-| Shopping List | `sl1_`  | `syncKey`, `updatedAt`, `lists`, `listOrder`, `activeListId` |
+| Shopping List | `sl1_`  | `syncKey`, `updatedAt`, `lists`, `listOrder`, `activeListId`, `notifsEnabled` |
 
-`activeListId` is device-local and is **not** synced to Firestore.
+`activeListId` and `notifsEnabled` are device-local and are **not** synced to Firestore.
 
 ## Data models
 
@@ -114,7 +114,7 @@ Each app uses its own prefix to avoid collisions:
 
 - Inline SVG strings are declared as constants at the top of the script block
 - `ICON_TRASH` (15×15), `ICON_CHEVRON`/`ICON_X` in `index.html`
-- `ICON_TRASH`, `ICON_CHECK`, `ICON_PENCIL` in `shopping.html`
+- `ICON_TRASH`, `ICON_CHECK`, `ICON_PENCIL`, `ICON_BELL`, `ICON_BELL_OFF` in `shopping.html`
 - No emoji in code unless decorating an empty state
 
 ## Service worker conventions
@@ -129,6 +129,18 @@ Each app uses its own prefix to avoid collisions:
 Deployed via **GitHub Pages** from the `main` branch — no CI, no build step. Pushing to `main` publishes immediately. Both apps are accessible as sibling URLs:
 - `https://<user>.github.io/<repo>/`            → Habit Tracker
 - `https://<user>.github.io/<repo>/shopping.html` → Shopping List
+
+## Notifications (Shopping List only)
+
+`shopping.html` uses the browser **Web Notifications API** to alert the user when another device adds items to a shared list.
+
+- A bell button in the header toggles notifications on/off (requests browser permission on first enable)
+- Preference stored in `sl1_notifsEnabled` localStorage key (device-local)
+- Notifications only fire when `document.hidden` — if the app is in the foreground the real-time render is sufficient
+- Items added locally are tracked in `locallyAddedIds` (an in-memory `Set`) so the adding device never self-notifies
+- The first sync after attaching (`localUpdatedAt === 0`) is always skipped to avoid a flood on initial load
+- Logic lives in `attachSync()`: diffs old vs new item IDs on each snapshot, fires `new Notification(...)` for new IDs not in `locallyAddedIds`
+- No push server or FCM involved — relies entirely on the Firestore `onSnapshot` WebSocket staying alive (works while browser/PWA is backgrounded; "unrestricted battery" on Android helps keep the connection alive)
 
 ## Things to avoid
 
