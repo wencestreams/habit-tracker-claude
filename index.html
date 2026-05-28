@@ -245,10 +245,23 @@ function fmtTimeCompact(mins) {
   return (Number.isInteger(h) ? h : h.toFixed(1)) + 'h';
 }
 
+function pruneOldData() {
+  const cutoff = new Date(TODAY);
+  cutoff.setDate(cutoff.getDate() - 365);
+  const cutoffStr = ymd(cutoff);
+  [checks, times].forEach(obj => {
+    Object.keys(obj).forEach(k => {
+      const dateStr = k.split('|')[1];
+      if (dateStr && dateStr < cutoffStr) delete obj[k];
+    });
+  });
+}
+
 function load() {
   try { habits = JSON.parse(localStorage.getItem('ht3_habits') || '[]'); } catch(e) { habits = []; }
   try { checks = JSON.parse(localStorage.getItem('ht3_checks') || '{}'); } catch(e) { checks = {}; }
   try { times  = JSON.parse(localStorage.getItem('ht3_times')  || '{}'); } catch(e) { times  = {}; }
+  pruneOldData();
   render();
 }
 
