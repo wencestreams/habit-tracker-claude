@@ -1,0 +1,18 @@
+{
+  "name": "Shopping List",
+  "short_name": "Shopping",
+  "description": "Shared shopping lists with real-time sync",
+  "start_url": "shopping.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-shopping.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

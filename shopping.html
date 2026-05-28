@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <meta name="theme-color" content="#3B82F6"/>
+  <meta name="description" content="Shared shopping lists with real-time sync"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Shopping"/>
+  <link rel="manifest" href="manifest-shopping.json"/>
+  <link rel="apple-touch-icon" href="icon-shopping.svg"/>
+  <link rel="icon" href="icon-shopping.svg" type="image/svg+xml"/>
+  <title>Shopping List</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --accent: #3B82F6;
+      --accent-dark: #1D4ED8;
+      --color-text-primary: #111827;
+      --color-text-secondary: #6B7280;
+      --color-text-tertiary: #9CA3AF;
+      --color-background-primary: #FFFFFF;
+      --color-background-secondary: #F9FAFB;
+      --color-border-primary: #9CA3AF;
+      --color-border-secondary: #E5E7EB;
+      --color-border-tertiary: #F3F4F6;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-text-primary: #F9FAFB;
+        --color-text-secondary: #9CA3AF;
+        --color-text-tertiary: #6B7280;
+        --color-background-primary: #1F2937;
+        --color-background-secondary: #111827;
+        --color-border-primary: #6B7280;
+        --color-border-secondary: #374151;
+        --color-border-tertiary: #273344;
+      }
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{
+      min-height:100%;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+      background:var(--color-background-secondary);
+      color:var(--color-text-primary);
+      -webkit-font-smoothing:antialiased;
+    }
+    .container{max-width:600px;margin:0 auto;padding:0 1rem}
+    .wrap{padding:1.5rem 0}
+
+    .header-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+    .title{font-size:18px;font-weight:600;flex:1}
+    .sync-btn{height:32px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+    .sync-btn:hover{background:var(--color-background-secondary)}
+
+    #install-bar{display:none;align-items:center;justify-content:space-between;gap:8px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1rem;font-size:13px;color:var(--color-text-secondary)}
+    #install-bar.visible{display:flex}
+    #install-bar button{height:28px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--accent-dark);background:var(--accent);color:#fff;font-size:12px;cursor:pointer;white-space:nowrap}
+    #install-dismiss{background:none;border:none;color:var(--color-text-tertiary);cursor:pointer;font-size:18px;line-height:1;padding:2px}
+
+    .tabs-wrap{display:flex;align-items:center;gap:6px;margin-bottom:1rem}
+    .tabs-scroll{display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .tabs-scroll::-webkit-scrollbar{display:none}
+    .tab{display:flex;align-items:center;gap:5px;height:34px;padding:0 14px;border-radius:99px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .1s}
+    .tab:hover{background:var(--color-background-secondary)}
+    .tab.active{background:var(--accent);border-color:var(--accent-dark);color:#fff}
+    .tab-edit-btn{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,0.25);border:none;cursor:pointer;padding:0;color:#fff;line-height:1;flex-shrink:0}
+    .tab-edit-btn:hover{background:rgba(255,255,255,0.4)}
+    .add-tab-btn{height:34px;width:34px;border-radius:50%;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .add-tab-btn:hover{background:var(--color-background-secondary)}
+
+    .item-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:6px;cursor:pointer;transition:background .1s}
+    .item-row:hover{background:var(--color-background-secondary)}
+    .item-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--color-border-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .1s,border-color .1s}
+    .item-check.done{background:var(--accent);border-color:var(--accent-dark)}
+    .item-name{flex:1;font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .item-name.done{text-decoration:line-through;color:var(--color-text-tertiary)}
+    .item-qty{font-size:12px;color:var(--color-text-secondary);white-space:nowrap;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);padding:2px 8px;border-radius:99px;flex-shrink:0}
+    .item-qty.done{color:var(--color-text-tertiary)}
+    .item-del{background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);padding:4px;border-radius:4px;display:flex;align-items:center;flex-shrink:0;line-height:1}
+    .item-del:hover{color:#E24B4A;background:#FCEBEB}
+    .checked-divider{font-size:12px;color:var(--color-text-tertiary);padding:10px 0 6px;display:flex;align-items:center;gap:8px}
+    .checked-divider::after{content:'';flex:1;height:0.5px;background:var(--color-border-secondary)}
+
+    .add-row{display:flex;gap:6px;margin-bottom:8px}
+    .add-row input{height:40px;padding:0 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);font-size:14px}
+    .add-row input:focus{outline:none;box-shadow:0 0 0 2px #3B82F644}
+    .inp-name{flex:1;min-width:0}
+    .inp-qty{width:72px}
+    .btn-add{height:40px;padding:0 18px;border-radius:var(--border-radius-md);border:0.5px solid var(--accent-dark);background:var(--accent);color:#fff;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;flex-shrink:0}
+    .btn-add:hover{background:var(--accent-dark)}
+    .actions-row{display:flex;gap:8px;margin-bottom:1.5rem}
+    .action-btn{height:32px;padding:0 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:13px;cursor:pointer}
+    .action-btn:hover{background:var(--color-background-secondary)}
+
+    .empty{text-align:center;padding:2.5rem 1rem;color:var(--color-text-tertiary);font-size:14px}
+    .no-lists{text-align:center;padding:3rem 1rem}
+
+    .popup-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);padding:1rem}
+    .popup{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem;width:100%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+    .popup-title{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px}
+    .popup-sub{font-size:12px;color:var(--color-text-secondary);margin-bottom:12px}
+    .popup-actions{display:flex;gap:6px;flex-wrap:wrap}
+    .popup-btn{flex:1;height:34px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;cursor:pointer;white-space:nowrap}
+    .popup-btn:hover{background:var(--color-background-primary)}
+    .popup-btn.danger{color:#E24B4A;border-color:#F09595}
+    .popup-btn.danger:hover{background:#FCEBEB}
+    .popup-btn.primary{background:var(--accent);border-color:var(--accent-dark);color:#fff}
+    .popup-btn.primary:hover{background:var(--accent-dark)}
+    .popup-divider{border:none;border-top:0.5px solid var(--color-border-tertiary);margin:10px 0}
+    .popup-input{width:100%;height:34px;padding:0 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;margin-bottom:10px;display:block}
+    .popup-input:focus{outline:none;box-shadow:0 0 0 2px #3B82F644}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="wrap">
+    <div class="header-row">
+      <div class="title">Shopping</div>
+      <button id="sync-btn" class="sync-btn" onclick="openSyncPopup()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        <span id="sync-label">Sync</span>
+      </button>
+    </div>
+
+    <div id="install-bar">
+      <span>Add to Home Screen for offline access</span>
+      <button id="install-btn">Install</button>
+      <button id="install-dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+
+    <div class="tabs-wrap">
+      <div id="tabs-scroll" class="tabs-scroll"></div>
+      <button class="add-tab-btn" onclick="addStore()" aria-label="Add store">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+
+    <div id="items-list"></div>
+
+    <div id="list-controls" style="display:none">
+      <div class="add-row">
+        <input type="text" id="new-item" class="inp-name" placeholder="Add item…" maxlength="80" autocomplete="off"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addItem()}"/>
+        <input type="text" id="new-qty" class="inp-qty" placeholder="Qty" maxlength="20" autocomplete="off"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();addItem()}"/>
+        <button class="btn-add" onclick="addItem()">Add</button>
+      </div>
+      <div class="actions-row">
+        <button class="action-btn" onclick="clearChecked()">Clear checked</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="popup-root"></div>
+
+<script>
+// ─── Firebase ─────────────────────────────────────────────────────────────────
+// Add this rule to Firestore security rules:
+//   match /shopping/{k} { allow read, write: if k.matches('[0-9a-f]{32}'); }
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCNLpnZFXsZkcDvi4cc0L5tV3KE1S_Sfhy",
+  authDomain: "habit-tracker-claude-cc@1a.firebaseapp.com",
+  projectId: "habit-tracker-claude-cc01a",
+  storageBucket: "habit-tracker-claude-cc0la.firebasestorage.app",
+  messagingSenderId: "646881871024",
+  appId: "1:646881871024:web:1414bf@db728ec7160a775"
+};
+const SYNC_READY = FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY';
+let db = null;
+if (SYNC_READY) {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+}
+let syncKey = null, syncUnsub = null;
+let localUpdatedAt = parseInt(localStorage.getItem('sl1_updatedAt') || '0', 10);
+let syncStatus = 'offline';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ICON_TRASH  = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`;
+const ICON_CHECK  = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const ICON_PENCIL = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+// ─── State ────────────────────────────────────────────────────────────────────
+// lists: { [listId]: { name: string, items: [{ id, name, qty, checked, addedAt }] } }
+// listOrder: listId[]  — tab display order
+let lists = {}, listOrder = [], activeListId = null;
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) { return esc(s).replace(/'/g,'&#39;'); }
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
+function load() {
+  try { lists = JSON.parse(localStorage.getItem('sl1_lists') || '{}'); } catch { lists = {}; }
+  try { listOrder = JSON.parse(localStorage.getItem('sl1_listOrder') || '[]'); } catch { listOrder = []; }
+  listOrder = listOrder.filter(id => lists[id]);
+
+  const saved = localStorage.getItem('sl1_activeListId');
+  if (saved && lists[saved]) activeListId = saved;
+  else if (listOrder.length) activeListId = listOrder[0];
+  else activeListId = null;
+
+  render();
+}
+
+function save() {
+  localStorage.setItem('sl1_lists', JSON.stringify(lists));
+  localStorage.setItem('sl1_listOrder', JSON.stringify(listOrder));
+  if (activeListId) localStorage.setItem('sl1_activeListId', activeListId);
+  if (db && syncKey) {
+    setSyncStatus('syncing');
+    db.collection('shopping').doc(syncKey).set({
+      lists, listOrder,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => setSyncStatus('synced')).catch(() => setSyncStatus('error'));
+  }
+}
+
+// ─── Store operations ─────────────────────────────────────────────────────────
+function addStore() {
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Add store</div>
+        <input class="popup-input" id="new-store-inp" type="text" placeholder="e.g. Tesco, Lidl…" maxlength="40"
+          onkeydown="if(event.key==='Enter')confirmAddStore()"/>
+        <div class="popup-actions">
+          <button class="popup-btn primary" onclick="confirmAddStore()">Add</button>
+          <button class="popup-btn" onclick="closePopup()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  requestAnimationFrame(() => { const i = document.getElementById('new-store-inp'); if (i) i.focus(); });
+}
+
+function confirmAddStore() {
+  const inp = document.getElementById('new-store-inp');
+  const name = (inp ? inp.value : '').trim();
+  if (!name) return;
+  const id = 'l' + Date.now();
+  lists[id] = { name, items: [] };
+  listOrder.push(id);
+  activeListId = id;
+  localStorage.setItem('sl1_activeListId', id);
+  closePopup(); save(); render();
+}
+
+function switchStore(id) {
+  if (!lists[id] || id === activeListId) return;
+  activeListId = id;
+  localStorage.setItem('sl1_activeListId', id);
+  renderTabs(); renderItems();
+}
+
+function editStorePopup(id) {
+  if (!lists[id]) return;
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Edit store</div>
+        <input class="popup-input" id="store-name-inp" type="text" value="${escAttr(lists[id].name)}" maxlength="40"
+          onkeydown="if(event.key==='Enter')applyRenameStore('${escAttr(id)}')"/>
+        <div class="popup-actions" style="margin-bottom:8px">
+          <button class="popup-btn primary" onclick="applyRenameStore('${escAttr(id)}')">Rename</button>
+          <button class="popup-btn" onclick="closePopup()">Cancel</button>
+        </div>
+        <hr class="popup-divider"/>
+        <div class="popup-actions">
+          <button class="popup-btn danger" onclick="deleteStoreConfirm('${escAttr(id)}')">Delete store</button>
+        </div>
+      </div>
+    </div>`;
+  requestAnimationFrame(() => { const i = document.getElementById('store-name-inp'); if (i) { i.focus(); i.select(); } });
+}
+
+function applyRenameStore(id) {
+  const inp = document.getElementById('store-name-inp');
+  const name = (inp ? inp.value : '').trim();
+  if (!name || !lists[id]) return;
+  lists[id].name = name;
+  closePopup(); save(); render();
+}
+
+function deleteStoreConfirm(id) {
+  if (!lists[id]) return;
+  const storeName = lists[id].name;
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Delete "${esc(storeName)}"?</div>
+        <div class="popup-sub" style="margin-bottom:16px">All items in this list will be permanently deleted.</div>
+        <div class="popup-actions">
+          <button class="popup-btn danger" id="confirm-del">Delete</button>
+          <button class="popup-btn" onclick="closePopup()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('confirm-del').onclick = () => {
+    delete lists[id];
+    listOrder = listOrder.filter(x => x !== id);
+    if (activeListId === id) {
+      activeListId = listOrder.length ? listOrder[0] : null;
+      if (activeListId) localStorage.setItem('sl1_activeListId', activeListId);
+      else localStorage.removeItem('sl1_activeListId');
+    }
+    closePopup(); save(); render();
+  };
+}
+
+// ─── Item operations ──────────────────────────────────────────────────────────
+function addItem() {
+  if (!activeListId || !lists[activeListId]) return;
+  const nameInp = document.getElementById('new-item');
+  const qtyInp  = document.getElementById('new-qty');
+  const name = (nameInp ? nameInp.value : '').trim();
+  if (!name) { if (nameInp) nameInp.focus(); return; }
+  const qty = (qtyInp ? qtyInp.value : '').trim();
+  lists[activeListId].items.unshift({ id: 'i' + Date.now(), name, qty, checked: false, addedAt: Date.now() });
+  if (nameInp) { nameInp.value = ''; nameInp.focus(); }
+  if (qtyInp) qtyInp.value = '';
+  save(); renderItems();
+}
+
+function toggleItem(listId, itemId) {
+  if (!lists[listId]) return;
+  const item = lists[listId].items.find(x => x.id === itemId);
+  if (!item) return;
+  item.checked = !item.checked;
+  save(); renderItems();
+}
+
+function deleteItem(listId, itemId) {
+  if (!lists[listId]) return;
+  lists[listId].items = lists[listId].items.filter(x => x.id !== itemId);
+  save(); renderItems();
+}
+
+function clearChecked() {
+  if (!activeListId || !lists[activeListId]) return;
+  const before = lists[activeListId].items.length;
+  lists[activeListId].items = lists[activeListId].items.filter(x => !x.checked);
+  if (lists[activeListId].items.length === before) return;
+  save(); renderItems();
+}
+
+function closePopup() { document.getElementById('popup-root').innerHTML = ''; }
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function render() { renderTabs(); renderItems(); }
+
+function renderTabs() {
+  const scroll = document.getElementById('tabs-scroll');
+  if (!listOrder.length) { scroll.innerHTML = ''; return; }
+  scroll.innerHTML = listOrder.map(id => {
+    if (!lists[id]) return '';
+    const isActive = id === activeListId;
+    const editBtn = isActive
+      ? `<button class="tab-edit-btn" onclick="event.stopPropagation();editStorePopup('${escAttr(id)}')" aria-label="Edit">${ICON_PENCIL}</button>`
+      : '';
+    return `<button class="tab${isActive ? ' active' : ''}" onclick="switchStore('${escAttr(id)}')">${esc(lists[id].name)}${editBtn}</button>`;
+  }).join('');
+}
+
+function renderItems() {
+  const el = document.getElementById('items-list');
+  const controls = document.getElementById('list-controls');
+  const hasActive = !!(activeListId && lists[activeListId]);
+  controls.style.display = hasActive ? '' : 'none';
+
+  if (!listOrder.length) {
+    el.innerHTML = `
+      <div class="no-lists">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-tertiary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        <div style="font-size:15px;font-weight:500;color:var(--color-text-secondary);margin-bottom:4px">No stores yet</div>
+        <div style="font-size:13px;color:var(--color-text-tertiary)">Tap + to add your first shopping list</div>
+      </div>`;
+    return;
+  }
+
+  if (!hasActive) { el.innerHTML = ''; return; }
+
+  const list = lists[activeListId];
+  const unchecked = list.items.filter(x => !x.checked);
+  const checked   = list.items.filter(x => x.checked);
+
+  if (!list.items.length) {
+    el.innerHTML = '<div class="empty">No items yet — add one below</div>';
+    return;
+  }
+
+  let html = '';
+  unchecked.forEach(item => { html += itemRowHTML(activeListId, item); });
+  if (checked.length) {
+    html += `<div class="checked-divider">Checked (${checked.length})</div>`;
+    checked.forEach(item => { html += itemRowHTML(activeListId, item); });
+  }
+  el.innerHTML = html;
+}
+
+function itemRowHTML(listId, item) {
+  const checkHtml = item.checked
+    ? `<div class="item-check done">${ICON_CHECK}</div>`
+    : `<div class="item-check"></div>`;
+  const qtyHtml = item.qty
+    ? `<span class="item-qty${item.checked ? ' done' : ''}">${esc(item.qty)}</span>`
+    : '';
+  return `<div class="item-row" onclick="toggleItem('${escAttr(listId)}','${escAttr(item.id)}')">
+    ${checkHtml}
+    <span class="item-name${item.checked ? ' done' : ''}">${esc(item.name)}</span>
+    ${qtyHtml}
+    <button class="item-del" onclick="event.stopPropagation();deleteItem('${escAttr(listId)}','${escAttr(item.id)}')" aria-label="Delete">
+      ${ICON_TRASH}
+    </button>
+  </div>`;
+}
+
+// ─── Sync ─────────────────────────────────────────────────────────────────────
+function setSyncStatus(s) {
+  syncStatus = s;
+  const btn = document.getElementById('sync-btn');
+  const lbl = document.getElementById('sync-label');
+  if (!btn) return;
+  btn.style.color = { synced:'#1D9E75', syncing:'#F59E0B', offline:'#9CA3AF', error:'#E24B4A' }[s] || '#9CA3AF';
+  if (lbl) lbl.textContent = { synced:'Synced', syncing:'Syncing…', offline:'Sync', error:'Sync error' }[s] || 'Sync';
+}
+
+function getSyncKey() {
+  let key = localStorage.getItem('sl1_syncKey');
+  if (!key) {
+    const arr = new Uint8Array(16);
+    crypto.getRandomValues(arr);
+    key = Array.from(arr, b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem('sl1_syncKey', key);
+  }
+  return key;
+}
+
+function attachSync() {
+  if (!SYNC_READY || !db) { setSyncStatus('offline'); return; }
+  syncKey = getSyncKey();
+  setSyncStatus('syncing');
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  syncUnsub = db.collection('shopping').doc(syncKey)
+    .onSnapshot({ includeMetadataChanges: true }, doc => {
+      if (doc.metadata.hasPendingWrites) return;
+      setSyncStatus('synced');
+      if (!doc.exists) return;
+      const data = doc.data();
+      const cloudTs = data.updatedAt ? data.updatedAt.toMillis() : 0;
+      if (cloudTs > localUpdatedAt) {
+        lists = data.lists || {};
+        listOrder = (data.listOrder || []).filter(id => lists[id]);
+        if (!lists[activeListId]) activeListId = listOrder.length ? listOrder[0] : null;
+        localUpdatedAt = cloudTs;
+        localStorage.setItem('sl1_lists', JSON.stringify(lists));
+        localStorage.setItem('sl1_listOrder', JSON.stringify(listOrder));
+        localStorage.setItem('sl1_updatedAt', String(cloudTs));
+        render();
+      }
+    }, () => setSyncStatus('error'));
+}
+
+function openSyncPopup() {
+  if (!SYNC_READY) {
+    document.getElementById('popup-root').innerHTML = `
+      <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+        <div class="popup">
+          <div class="popup-title">Sync not configured</div>
+          <div class="popup-sub" style="margin-bottom:16px">Add your Firebase project config to <code>shopping.html</code> to enable sync.</div>
+          <div class="popup-actions"><button class="popup-btn primary" onclick="closePopup()">Close</button></div>
+        </div>
+      </div>`;
+    return;
+  }
+  const key = syncKey || getSyncKey();
+  const masked = key.slice(0, 8) + '…' + key.slice(-4);
+  const statusLabel = { synced:'Synced ✓', syncing:'Syncing…', offline:'Offline', error:'Error' }[syncStatus] || '';
+  document.getElementById('popup-root').innerHTML = `
+    <div class="popup-overlay" onclick="if(event.target===this)closePopup()">
+      <div class="popup">
+        <div class="popup-title">Sync settings</div>
+        <div class="popup-sub">${statusLabel}</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Your sync key</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center">
+          <code style="flex:1;font-size:11px;background:var(--color-background-secondary);padding:6px 8px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${masked}</code>
+          <button class="popup-btn" style="flex:0;padding:0 12px" onclick="copySyncKey()">Copy</button>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Link another device</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          <input id="sync-key-input" type="text" maxlength="32" placeholder="Paste 32-char key…"
+            style="flex:1;height:30px;padding:0 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:12px;font-family:monospace"/>
+          <button class="popup-btn primary" style="flex:0;padding:0 12px" onclick="applySyncKey()">Use</button>
+        </div>
+        <hr class="popup-divider"/>
+        <div class="popup-actions">
+          <button class="popup-btn danger" onclick="resetSyncKey()">Reset key</button>
+          <button class="popup-btn" onclick="closePopup()">Close</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function copySyncKey() {
+  const key = syncKey || getSyncKey();
+  navigator.clipboard.writeText(key).then(() => {
+    const inp = document.getElementById('sync-key-input');
+    if (inp) { inp.placeholder = 'Copied!'; setTimeout(() => { inp.placeholder = 'Paste 32-char key…'; }, 2000); }
+  }).catch(() => {});
+}
+
+function applySyncKey() {
+  const val = (document.getElementById('sync-key-input')?.value || '').trim().toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(val)) { alert('Please enter a valid 32-character sync key.'); return; }
+  localStorage.setItem('sl1_syncKey', val);
+  localStorage.setItem('sl1_updatedAt', '0');
+  localUpdatedAt = 0;
+  syncKey = val;
+  closePopup();
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  attachSync();
+}
+
+function resetSyncKey() {
+  if (!confirm('Generate a new sync key? All other devices will be disconnected.')) return;
+  localStorage.removeItem('sl1_syncKey');
+  localStorage.setItem('sl1_updatedAt', '0');
+  localUpdatedAt = 0;
+  if (syncUnsub) { syncUnsub(); syncUnsub = null; }
+  syncKey = null;
+  closePopup();
+  attachSync();
+}
+
+// ─── PWA ──────────────────────────────────────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-bar').classList.add('visible');
+});
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-bar').classList.remove('visible');
+});
+document.getElementById('install-dismiss').addEventListener('click', () => {
+  document.getElementById('install-bar').classList.remove('visible');
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-bar').classList.remove('visible');
+});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw-shopping.js').catch(() => {}); });
+}
+
+load();
+attachSync();
+</script>
+</body>
+</html>
